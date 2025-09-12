@@ -36,78 +36,77 @@ public class MultiPortTcpService : IDisposable
 
         _logger.LogInformation("Starting TCP listeners on timing port {TimingPort} and results port {ResultsPort}", timingPort, resultsPort);
 
-        // Start timing listener
-        _timingListener = new TcpListener(IPAddress.Any, timingPort);
-        _timingListener.Start();
+        try
+        {
+            // Start timing listener
+            _timingListener = new TcpListener(IPAddress.Any, timingPort);
+            _timingListener.Start();
+            _logger.LogInformation("Timing listener started on {EndPoint}", _timingListener.LocalEndpoint);
 
-        // Start results listener
-        _resultsListener = new TcpListener(IPAddress.Any, resultsPort);
-        _resultsListener.Start();
+            // Start results listener
+            _resultsListener = new TcpListener(IPAddress.Any, resultsPort);
+            _resultsListener.Start();
+            _logger.LogInformation("Results listener started on {EndPoint}", _resultsListener.LocalEndpoint);
 
-        _cancellationTokenSource = new CancellationTokenSource();
+            _cancellationTokenSource = new CancellationTokenSource();
 
-        _logger.LogInformation("TCP listeners started successfully");
+            _logger.LogInformation("TCP listeners started successfully");
 
-        // Start accepting connections in background tasks
-        _ = Task.Run(() => AcceptConnectionsAsync(_timingListener, "TIMING", _cancellationTokenSource.Token));
-        _ = Task.Run(() => AcceptConnectionsAsync(_resultsListener, "RESULTS", _cancellationTokenSource.Token));
+            // Start accepting connections in background tasks
+            _ = Task.Run(() => AcceptConnectionsAsync(_timingListener, "TIMING", _cancellationTokenSource.Token));
+            _ = Task.Run(() => AcceptConnectionsAsync(_resultsListener, "RESULTS", _cancellationTokenSource.Token));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start TCP listeners");
+            throw;
+        }
         
         return Task.CompletedTask;
     }
 
     private async Task AcceptConnectionsAsync(TcpListener listener, string connectionType, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Starting to accept {ConnectionType} connections on port {Port}", connectionType, ((IPEndPoint)listener.LocalEndpoint).Port);
+        
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                // Use a timeout-based approach for cancellation
-                using (var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)))
-                using (var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token))
+                // Use AcceptTcpClientAsync with cancellation token
+                var tcpClient = await listener.AcceptTcpClientAsync(cancellationToken);
+                _logger.LogInformation("{ConnectionType} client connected from {RemoteEndPoint}", connectionType, tcpClient.Client.RemoteEndPoint);
+
+                // Track the active connection
+                lock (_connectionsLock)
                 {
-                    var acceptTask = listener.AcceptTcpClientAsync();
-                    var timeoutTask = Task.Delay(100, combinedCts.Token);
-                    
-                    var completedTask = await Task.WhenAny(acceptTask, timeoutTask);
-                    
-                    if (completedTask == timeoutTask)
-                    {
-                        // Timeout occurred, check if we should continue or exit
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                        continue; // Continue the loop to check for cancellation
-                    }
-                    
-                    var tcpClient = await acceptTask;
-                    _logger.LogInformation("{ConnectionType} client connected from {RemoteEndPoint}", connectionType, tcpClient.Client.RemoteEndPoint);
-
-                    // Track the active connection
-                    lock (_connectionsLock)
-                    {
-                        _activeConnections.Add(tcpClient);
-                    }
-
-                    // Handle each client connection in a separate task
-                    _ = Task.Run(() => HandleClientAsync(tcpClient, connectionType, cancellationToken));
+                    _activeConnections.Add(tcpClient);
                 }
+
+                // Handle each client connection in a separate task
+                _ = Task.Run(() => HandleClientAsync(tcpClient, connectionType, cancellationToken));
             }
             catch (ObjectDisposedException)
             {
                 // TcpListener was disposed, exit gracefully
+                _logger.LogInformation("{ConnectionType} listener was disposed, stopping acceptance", connectionType);
                 break;
             }
             catch (OperationCanceledException)
             {
                 // Cancellation was requested
+                _logger.LogInformation("{ConnectionType} listener cancellation requested, stopping acceptance", connectionType);
                 break;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error accepting {ConnectionType} TCP connection", connectionType);
+                // Add a small delay to prevent rapid error loops
+                await Task.Delay(1000, cancellationToken);
             }
         }
+        
+        _logger.LogInformation("Stopped accepting {ConnectionType} connections", connectionType);
     }
 
     private async Task HandleClientAsync(TcpClient client, string connectionType, CancellationToken cancellationToken)
