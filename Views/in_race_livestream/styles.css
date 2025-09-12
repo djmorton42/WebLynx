@@ -1,0 +1,95 @@
+body {
+  background-color: #000;
+  color: white;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.race-clock {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  text-align: center;
+  font-size: 4em;
+  font-weight: bold;
+  color: #ff4444;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+}
+
+.racer-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+.racer-row {
+  display: flex;
+  gap: 4px;
+}
+
+.racer-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 8px 8px 8px 24px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.position {
+  background-color: #333;
+  padding: 4px 8px;
+  margin-right: 8px;
+  border-radius: 3px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.color-indicator {
+  width: 16px;
+  height: 100%;
+  margin-right: 8px;
+  border-radius: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.racer-info {
+  flex: 1;
+}
+
+.racer-name {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.affiliation {
+  color: #888;
+  font-size: 0.9em;
+}
+
+.time {
+  color: #ff4444;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.lap-count {
+  background-color: #444;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+

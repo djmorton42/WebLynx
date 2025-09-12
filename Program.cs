@@ -9,12 +9,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
+// Configure host options for faster shutdown
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ShutdownTimeout = TimeSpan.FromSeconds(5);
+});
+
 // Add services
 builder.Services.AddSingleton<DiagnosticService>();
 builder.Services.AddSingleton<DataLoggingService>();
 builder.Services.AddSingleton<MessageParser>();
 builder.Services.AddSingleton<RaceStateManager>();
 builder.Services.AddSingleton<MultiPortTcpService>();
+builder.Services.AddSingleton<TemplateService>();
 builder.Services.AddHostedService<LiveRaceFileWriter>();
 
 // Add API services
@@ -35,6 +42,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+
+// Serve static files from Views directory
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "Views")),
+    RequestPath = "/views"
+});
+
+// Serve other static files (like favicon.ico) from wwwroot
+app.UseStaticFiles();
+
 app.MapControllers();
 
 // Configure the HTTP port
@@ -52,7 +71,14 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("HTTP API service will be available at: http://localhost:{Port}", httpPort);
 logger.LogInformation("Swagger documentation will be available at: http://localhost:{Port}/swagger", httpPort);
 
-
+// Register graceful shutdown
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStopping.Register(() =>
+{
+    logger.LogInformation("Application is shutting down, stopping TCP listeners...");
+    multiPortTcpService.Stop();
+    logger.LogInformation("TCP listeners stopped");
+});
 
 // Keep the application running
 await app.RunAsync();

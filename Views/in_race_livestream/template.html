@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="/views/in_race_livestream/styles.css">
+  </head>
+  <body>
+    <div class="race-clock">{{RACE_CLOCK}}</div>
+    
+    <div class="racer-grid">
+      {{RACER_ROWS}}
+    </div>
+    
+    <script>
+      // Set up Server-Sent Events for auto-refresh
+      const eventSource = new EventSource('/views/in_race_livestream/events');
+      
+      eventSource.onmessage = function(event) {
+        console.log('SSE message received:', event.data);
+        try {
+          // Parse the received body content and update specific elements
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(event.data, 'text/html');
+          
+          // Update race clock
+          const newClock = doc.querySelector('.race-clock');
+          const currentClock = document.querySelector('.race-clock');
+          if (newClock && currentClock) {
+            currentClock.innerHTML = newClock.innerHTML;
+            console.log('Updated race clock:', newClock.innerHTML);
+          }
+          
+          // Update racer grid
+          const newGrid = doc.querySelector('.racer-grid');
+          const currentGrid = document.querySelector('.racer-grid');
+          if (newGrid && currentGrid) {
+            currentGrid.innerHTML = newGrid.innerHTML;
+            console.log('Updated racer grid');
+          }
+          
+          console.log('Updated page content via SSE');
+        } catch (error) {
+          console.error('Error updating page content:', error);
+        }
+      };
+      
+      eventSource.onopen = function(event) {
+        console.log('SSE connection opened');
+      };
+      
+      eventSource.onerror = function(event) {
+        console.error('EventSource failed:', event);
+        // Fallback to page refresh every 5 seconds if SSE fails
+        setTimeout(() => {
+          console.log('Reloading page due to SSE failure');
+          window.location.reload();
+        }, 5000);
+      };
+      
+      // Add a fallback refresh every 30 seconds
+      setInterval(() => {
+        console.log('Periodic refresh check');
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('SSE connection closed, reloading page');
+          window.location.reload();
+        }
+      }, 30000);
+    </script>
+  </body>
+</html>

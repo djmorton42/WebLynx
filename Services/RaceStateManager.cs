@@ -78,6 +78,7 @@ public class RaceStateManager
             CurrentRace.LastUpdated = DateTime.UtcNow;
 
             // Notify subscribers
+            _logger.LogDebug("Notifying subscribers of race update");
             RaceUpdated?.Invoke(this, CurrentRace);
         }
         catch (Exception ex)

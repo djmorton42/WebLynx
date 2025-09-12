@@ -5,7 +5,7 @@ using System.Net.Sockets;
 
 namespace WebLynx.Services;
 
-public class MultiPortTcpService
+public class MultiPortTcpService : IDisposable
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<MultiPortTcpService> _logger;
@@ -15,6 +15,9 @@ public class MultiPortTcpService
     private TcpListener? _timingListener;
     private TcpListener? _resultsListener;
     private CancellationTokenSource? _cancellationTokenSource;
+    private readonly List<TcpClient> _activeConnections = new();
+    private readonly object _connectionsLock = new();
+    private bool _isStopped = false;
 
     public MultiPortTcpService(IConfiguration configuration, ILogger<MultiPortTcpService> logger, DataLoggingService dataLoggingService, DiagnosticService diagnosticService, RaceStateManager raceStateManager)
     {
@@ -58,15 +61,46 @@ public class MultiPortTcpService
         {
             try
             {
-                var tcpClient = await listener.AcceptTcpClientAsync();
-                _logger.LogInformation("{ConnectionType} client connected from {RemoteEndPoint}", connectionType, tcpClient.Client.RemoteEndPoint);
+                // Use a timeout-based approach for cancellation
+                using (var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100)))
+                using (var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token))
+                {
+                    var acceptTask = listener.AcceptTcpClientAsync();
+                    var timeoutTask = Task.Delay(100, combinedCts.Token);
+                    
+                    var completedTask = await Task.WhenAny(acceptTask, timeoutTask);
+                    
+                    if (completedTask == timeoutTask)
+                    {
+                        // Timeout occurred, check if we should continue or exit
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        continue; // Continue the loop to check for cancellation
+                    }
+                    
+                    var tcpClient = await acceptTask;
+                    _logger.LogInformation("{ConnectionType} client connected from {RemoteEndPoint}", connectionType, tcpClient.Client.RemoteEndPoint);
 
-                // Handle each client connection in a separate task
-                _ = Task.Run(() => HandleClientAsync(tcpClient, connectionType, cancellationToken));
+                    // Track the active connection
+                    lock (_connectionsLock)
+                    {
+                        _activeConnections.Add(tcpClient);
+                    }
+
+                    // Handle each client connection in a separate task
+                    _ = Task.Run(() => HandleClientAsync(tcpClient, connectionType, cancellationToken));
+                }
             }
             catch (ObjectDisposedException)
             {
                 // TcpListener was disposed, exit gracefully
+                break;
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation was requested
                 break;
             }
             catch (Exception ex)
@@ -114,14 +148,97 @@ public class MultiPortTcpService
         {
             _logger.LogError(ex, "Error handling {ConnectionType} client connection from {RemoteEndPoint}", connectionType, client.Client.RemoteEndPoint);
         }
+        finally
+        {
+            // Remove the connection from tracking when done
+            lock (_connectionsLock)
+            {
+                _activeConnections.Remove(client);
+            }
+        }
     }
 
     public void Stop()
     {
+        if (_isStopped)
+        {
+            return;
+        }
+        
+        _isStopped = true;
         _logger.LogInformation("Stopping TCP listeners");
-        _cancellationTokenSource?.Cancel();
-        _timingListener?.Stop();
-        _resultsListener?.Stop();
+        
+        // Cancel all operations immediately
+        try
+        {
+            _cancellationTokenSource?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already disposed, ignore
+        }
+        
+        // Close all active client connections
+        List<TcpClient> connectionsToClose;
+        lock (_connectionsLock)
+        {
+            connectionsToClose = new List<TcpClient>(_activeConnections);
+        }
+        
+        foreach (var connection in connectionsToClose)
+        {
+            try
+            {
+                if (connection.Connected)
+                {
+                    // Explicitly shutdown the socket first to ensure clean termination
+                    connection.Client.Shutdown(SocketShutdown.Both);
+                    connection.Close();
+                    _logger.LogInformation("Closed client connection from {RemoteEndPoint}", connection.Client.RemoteEndPoint);
+                }
+                connection.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error closing client connection from {RemoteEndPoint}", connection.Client.RemoteEndPoint);
+            }
+        }
+        
+        // Stop listeners immediately
+        try
+        {
+            _timingListener?.Stop();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping timing listener");
+        }
+        
+        try
+        {
+            _resultsListener?.Stop();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error stopping results listener");
+        }
+        
+        // Dispose resources
         _cancellationTokenSource?.Dispose();
+        _timingListener = null;
+        _resultsListener = null;
+        
+        // Clear the connections list
+        lock (_connectionsLock)
+        {
+            _activeConnections.Clear();
+        }
+        
+        _logger.LogInformation("TCP listeners stopped and all connections closed");
+    }
+
+    public void Dispose()
+    {
+        Stop();
     }
 }
