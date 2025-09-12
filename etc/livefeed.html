@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        background-color: #000;
+        color: white;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      
+      .racer-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+      }
+      
+      .racer-row {
+        display: flex;
+        gap: 4px;
+      }
+      
+      .racer-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 8px 8px 8px 24px;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .position {
+        background-color: #333;
+        padding: 4px 8px;
+        margin-right: 8px;
+        border-radius: 3px;
+        min-width: 20px;
+        text-align: center;
+      }
+      
+      .color-indicator {
+        width: 16px;
+        height: 100%;
+        margin-right: 8px;
+        border-radius: 2px;
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      
+      .racer-info {
+        flex: 1;
+      }
+      
+      .racer-name {
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      
+      .province {
+        color: #888;
+        font-size: 0.9em;
+      }
+      
+      .time {
+        color: #ff4444;
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      
+      .lap-count {
+        background-color: #444;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="racer-grid">
+      <div class="racer-row">
+        <div class="racer-card">
+          <div class="position">1</div>
+          <div class="color-indicator" style="background-color: #000;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Omar ZOUBIR</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">9.775</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">2</div>
+          <div class="color-indicator" style="background-color: #ffff00;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Maxym PIGEON</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">9.829</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">3</div>
+          <div class="color-indicator" style="background-color: #00ffff;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Ivan GULENOK</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">9.79</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">4</div>
+          <div class="color-indicator" style="background-color: #888;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Gavin OGILVIE</div>
+            <div class="province">AB</div>
+          </div>
+          <div class="time">10.13</div>
+          <div class="lap-count">2</div>
+        </div>
+      </div>
+      <div class="racer-row">
+        <div class="racer-card">
+          <div class="position">5</div>
+          <div class="color-indicator" style="background-color: #0000ff;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Emmery BOUCHARD</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">10.2</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">6</div>
+          <div class="color-indicator" style="background-color: #ff00ff;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Victor GAUTHIER</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">10.037</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">7</div>
+          <div class="color-indicator" style="background-color: #ff0000;"></div>
+          <div class="racer-info">
+            <div class="racer-name">Nigel EMBLIN</div>
+            <div class="province">ON</div>
+          </div>
+          <div class="time">11.469</div>
+          <div class="lap-count">2</div>
+        </div>
+        <div class="racer-card">
+          <div class="position">8</div>
+          <div class="color-indicator" style="background-color: #fff;"></div>
+          <div class="racer-info">
+            <div class="racer-name">William CLEMENT</div>
+            <div class="province">QC</div>
+          </div>
+          <div class="time">15.079</div>
+          <div class="lap-count">2</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
