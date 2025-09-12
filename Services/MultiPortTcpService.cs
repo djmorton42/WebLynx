@@ -145,14 +145,18 @@ public class MultiPortTcpService : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling {ConnectionType} client connection from {RemoteEndPoint}", connectionType, client.Client.RemoteEndPoint);
+            var remoteEndPoint = client?.Client?.RemoteEndPoint?.ToString() ?? "unknown";
+            _logger.LogError(ex, "Error handling {ConnectionType} client connection from {RemoteEndPoint}", connectionType, remoteEndPoint);
         }
         finally
         {
             // Remove the connection from tracking when done
-            lock (_connectionsLock)
+            if (client != null)
             {
-                _activeConnections.Remove(client);
+                lock (_connectionsLock)
+                {
+                    _activeConnections.Remove(client);
+                }
             }
         }
     }
@@ -188,18 +192,19 @@ public class MultiPortTcpService : IDisposable
         {
             try
             {
-                if (connection.Connected)
+                if (connection?.Connected == true && connection.Client != null)
                 {
                     // Explicitly shutdown the socket first to ensure clean termination
                     connection.Client.Shutdown(SocketShutdown.Both);
                     connection.Close();
                     _logger.LogInformation("Closed client connection from {RemoteEndPoint}", connection.Client.RemoteEndPoint);
                 }
-                connection.Dispose();
+                connection?.Dispose();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error closing client connection from {RemoteEndPoint}", connection.Client.RemoteEndPoint);
+                var remoteEndPoint = connection?.Client?.RemoteEndPoint?.ToString() ?? "unknown";
+                _logger.LogWarning(ex, "Error closing client connection from {RemoteEndPoint}", remoteEndPoint);
             }
         }
         
