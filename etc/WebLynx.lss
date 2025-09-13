@@ -272,15 +272,16 @@
 \13\00\0d\0a
 \13\07AUTO/MANUAL start  : %s\0d\0a
 \13\08Number of results  : %s\0d\0a
-\13\00Ln  Id   Name                                               Affiliation                   \0d\0a
-\13\00--- ---- -------------------------------------------------- ------------------------------\0d\0a
+\13\00Ln  Id   Name                                               Affiliation                    Laps \0d\0a
+\13\00--- ---- -------------------------------------------------- ------------------------------ -----\0d\0a
 
 ;;StartList
 ; This is sent once for each result line displayed on the scoreboard.
 \14\02%-3.3s 
 \14\03%-4.4s 
 \14\04%-50.50s 
-\14\05%-30.30s
+\14\05%-30.30s 
+\14\0a%-5.5s
 \14\00\0d\0a
 
 ;;StartedHeader

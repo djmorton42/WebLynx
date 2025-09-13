@@ -405,10 +405,18 @@ public class MessageParser
         {
             if (line.Length >= 9)
             {
+                //0         1         2         3         4         5         6         7         8         9
+                //0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789            
+                //Ln  Id   Name                                               Affiliation                    Laps
+                //--- ---- -------------------------------------------------- ------------------------------ -----
+                //1   100  Person mcPersonFace                                Ottawa SSC"                    5
+
+
                 var lane = FixedWidthParser.TrimParse(line, 0, 3, int.Parse);
                 var id = FixedWidthParser.TrimParse(line, 4, 4, int.Parse);
                 var name = FixedWidthParser.TrimParse(line, 9, 50, "Unknown");
                 var affiliation = FixedWidthParser.TrimParse(line, 60, 30, s => s.TrimEnd('"'), "Unknown");
+                var laps = FixedWidthParser.TrimParse(line, 91, 5, int.Parse, 0);
                 
                 _logger.LogDebug("Parsed racer: Lane={Lane}, ID={Id}, Name='{Name}', Affiliation='{Affiliation}'", 
                     lane, id, name, affiliation);
@@ -418,7 +426,8 @@ public class MessageParser
                     Lane = lane,
                     Id = id,
                     Name = name,
-                    Affiliation = affiliation
+                    Affiliation = affiliation,
+                    LapsRemaining = laps
                 };
             }
             else
