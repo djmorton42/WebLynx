@@ -11,11 +11,13 @@ public class RaceController : ControllerBase
 {
     private readonly ILogger<RaceController> _logger;
     private readonly RaceStateManager _raceStateManager;
+    private readonly TemplateService _templateService;
 
-    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager)
+    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager, TemplateService templateService)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
+        _templateService = templateService;
     }
 
     [HttpGet("current")]
@@ -101,6 +103,47 @@ public class RaceController : ControllerBase
         }
     }
 
-
+    [HttpGet("race-data")]
+    public ActionResult<RaceDataApiResponse> GetRaceData([FromQuery] string sortBy = "place")
+    {
+        try
+        {
+            var raceData = _raceStateManager.GetCurrentRaceState();
+            var sortedRacers = _templateService.SortRacers(raceData.Racers, sortBy);
+            
+            var response = new RaceDataApiResponse
+            {
+                CurrentTime = raceData.CurrentTime,
+                Event = raceData.Event,
+                Status = raceData.Status,
+                LastUpdated = raceData.LastUpdated,
+                Racers = sortedRacers.Select(r => new RacerApiResponse
+                {
+                    Lane = r.Lane,
+                    Id = r.Id,
+                    Name = r.Name,
+                    Affiliation = r.Affiliation,
+                    Place = r.Place,
+                    ReactionTime = r.ReactionTime,
+                    CumulativeSplitTime = r.CumulativeSplitTime,
+                    LastSplitTime = r.LastSplitTime,
+                    BestSplitTime = r.BestSplitTime,
+                    LapsRemaining = r.LapsRemaining,
+                    Speed = r.Speed,
+                    Pace = r.Pace,
+                    FinalTime = r.FinalTime,
+                    DeltaTime = r.DeltaTime,
+                    HasFinished = r.HasFinished
+                }).ToList()
+            };
+            
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting race data for API");
+            return StatusCode(500, "Internal server error");
+        }
+    }
 
 }
