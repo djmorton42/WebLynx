@@ -8,7 +8,7 @@
       <!-- Header Section -->
       <div class="header-section">
         <div class="meet-title" id="meet-title">{{MEET_TITLE}}</div>
-        <div class="event-name" id="event-name">{{EVENT_NAME}}</div>
+        <div class="event-name" id="event-name">{{EVENT_SUBTITLE}}</div>
         <div class="unofficial-indicator">{{UNOFFICIAL_RESULTS_TEXT}}</div>
         <div class="sso-logo">
           <img src="/views/broadcast_results/sso-logo.png" alt="SSO Logo" />
@@ -17,7 +17,7 @@
       
       <!-- Race Details Bar -->
       <div class="race-details-bar" id="race-details-bar">
-        M 1500-2 Qual 35B
+        No active race
       </div>
       
       <!-- Results Table -->
@@ -104,6 +104,11 @@
         clone.querySelector('.racer-name').textContent = racer.name || '-';
         clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
         clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        
+        // Set the racer card border to match the lane color
+        const resultRow = clone.querySelector('.result-row');
+        const laneColor = getLaneColor(racer.lane);
+        resultRow.style.border = `2px solid ${laneColor}`;
         
         // Show/hide time box based on whether any racers have places
         const timeElement = clone.querySelector('.final-time');

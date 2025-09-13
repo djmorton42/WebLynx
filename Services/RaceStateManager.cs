@@ -69,6 +69,9 @@ public class RaceStateManager
                     case MessageType.ResultsHeader:
                         ProcessResultsHeaderMessage(completeText);
                         break;
+                    case MessageType.Announcement:
+                        ProcessAnnouncementMessage(completeText);
+                        break;
                     default:
                         _logger.LogWarning("Unknown message type from {ClientInfo}: {Text}", clientInfo, completeText);
                         break;
@@ -244,6 +247,23 @@ public class RaceStateManager
             
             CurrentRace.Status = RaceStatus.Finished;
             _logger.LogInformation("Updated final results for {Count} racers", racers.Count);
+        }
+    }
+
+    private void ProcessAnnouncementMessage(string text)
+    {
+        _logger.LogInformation("Processing Announcement message");
+        
+        var announcementMessage = _messageParser.ParseAnnouncementMessage(text);
+        CurrentRace.AnnouncementMessage = announcementMessage; // Always update, even if null/empty
+        
+        if (!string.IsNullOrEmpty(announcementMessage))
+        {
+            _logger.LogInformation("Updated announcement message: {Message}", announcementMessage);
+        }
+        else
+        {
+            _logger.LogInformation("Cleared announcement message");
         }
     }
 

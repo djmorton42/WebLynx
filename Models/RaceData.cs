@@ -9,6 +9,7 @@ public class RaceData
     public TimeSpan? CurrentTime { get; set; }
     public RaceStatus Status { get; set; } = RaceStatus.NotStarted;
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    public string? AnnouncementMessage { get; set; }
 }
 
 public class RaceEvent
@@ -71,6 +72,7 @@ public enum MessageType
     StartListHeader,
     StartedHeader,
     ResultsHeader,
+    Announcement,
     Unknown
 }
 
@@ -81,6 +83,7 @@ public class RaceDataApiResponse
     public RaceStatus Status { get; set; }
     public DateTime LastUpdated { get; set; }
     public List<RacerApiResponse> Racers { get; set; } = new();
+    public string? AnnouncementMessage { get; set; }
 }
 
 public class RacerApiResponse

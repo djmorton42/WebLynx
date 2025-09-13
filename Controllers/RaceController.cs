@@ -117,6 +117,7 @@ public class RaceController : ControllerBase
                 Event = raceData.Event,
                 Status = raceData.Status,
                 LastUpdated = raceData.LastUpdated,
+                AnnouncementMessage = raceData.AnnouncementMessage,
                 Racers = sortedRacers.Select(r => new RacerApiResponse
                 {
                     Lane = r.Lane,
@@ -144,6 +145,29 @@ public class RaceController : ControllerBase
             _logger.LogError(ex, "Error getting race data for API");
             return StatusCode(500, "Internal server error");
         }
+    }
+
+    [HttpPost("test-announcement")]
+    public async Task<IActionResult> TestAnnouncement([FromBody] TestAnnouncementRequest request)
+    {
+        try
+        {
+            // Convert the message to UTF-16 bytes (like the real system would send)
+            var messageBytes = System.Text.Encoding.Unicode.GetBytes(request.Message);
+            await _raceStateManager.ProcessMessageAsync(messageBytes, "Test Announcement");
+            
+            return Ok("Test announcement processed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing test announcement");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    public class TestAnnouncementRequest
+    {
+        public string Message { get; set; } = string.Empty;
     }
 
 }

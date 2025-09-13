@@ -72,7 +72,7 @@ public class TemplateService
             
             // Replace configuration placeholders with actual values
             template = template.Replace("{{MEET_TITLE}}", _broadcastSettings.MeetTitle);
-            template = template.Replace("{{EVENT_NAME}}", _broadcastSettings.EventName);
+            template = template.Replace("{{EVENT_SUBTITLE}}", _broadcastSettings.EventSubtitle);
             template = template.Replace("{{UNOFFICIAL_RESULTS_TEXT}}", _broadcastSettings.UnofficialResultsText);
             
             return template;
@@ -81,6 +81,32 @@ public class TemplateService
         {
             _logger.LogError(ex, "Error processing broadcast results template");
             return GenerateBroadcastResultsFallbackHtml(raceData);
+        }
+    }
+
+    public string ProcessAnnouncementsTemplate(RaceData raceData)
+    {
+        try
+        {
+            var announcementsTemplatePath = Path.Combine("Views", "announcements", "template.html");
+            if (!File.Exists(announcementsTemplatePath))
+            {
+                _logger.LogError("Announcements template file not found: {TemplatePath}", announcementsTemplatePath);
+                return GenerateAnnouncementsFallbackHtml(raceData);
+            }
+
+            var template = File.ReadAllText(announcementsTemplatePath);
+            
+            // Replace configuration placeholders with actual values
+            template = template.Replace("{{MEET_TITLE}}", _broadcastSettings.MeetTitle);
+            template = template.Replace("{{EVENT_SUBTITLE}}", _broadcastSettings.EventSubtitle);
+            
+            return template;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing announcements template");
+            return GenerateAnnouncementsFallbackHtml(raceData);
         }
     }
 
@@ -168,7 +194,7 @@ public class TemplateService
     <div class=""broadcast-overlay"">
       <div class=""header-section"">
         <div class=""meet-title"">{_broadcastSettings.MeetTitle}</div>
-        <div class=""event-name"">{_broadcastSettings.EventName}</div>
+        <div class=""event-subtitle"">{_broadcastSettings.EventSubtitle}</div>
         <div class=""unofficial-indicator"">{_broadcastSettings.UnofficialResultsText}</div>
       </div>
       <div class=""race-details-bar"">No Race Data</div>
@@ -189,6 +215,39 @@ public class TemplateService
       setInterval(() => {{
         window.location.reload();
       }}, 1000);
+    </script>
+  </body>
+</html>";
+    }
+
+    private string GenerateAnnouncementsFallbackHtml(RaceData raceData)
+    {
+        return $@"<!DOCTYPE html>
+<html>
+  <head>
+    <link rel=""stylesheet"" href=""/views/announcements/styles.css"">
+  </head>
+  <body>
+    <div class=""announcement-overlay"">
+      <div class=""header-section"">
+        <div class=""meet-info"">
+          <div class=""meet-title"">{_broadcastSettings.MeetTitle}</div>
+          <div class=""event-subtitle"">{_broadcastSettings.EventSubtitle}</div>
+        </div>
+        <div class=""sso-logo"">
+          <img src=""/views/announcements/sso-logo.png"" alt=""SSO Logo"" />
+        </div>
+      </div>
+      <div class=""announcement-content"">
+        <div class=""announcement-message"" style=""display: none;"">
+        </div>
+      </div>
+    </div>
+    <script>
+      // Simple auto-refresh every 2000ms
+      setInterval(() => {{
+        window.location.reload();
+      }}, 2000);
     </script>
   </body>
 </html>";

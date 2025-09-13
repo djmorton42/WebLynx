@@ -66,6 +66,22 @@ public class ViewsController : Controller
         }
     }
 
+    [HttpGet("views/announcements")]
+    public IActionResult GetAnnouncements()
+    {
+        try
+        {
+            var raceData = _raceStateManager.GetCurrentRaceState();
+            var html = _templateService.ProcessAnnouncementsTemplate(raceData);
+            return Content(html, "text/html");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating announcements view");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
     [HttpGet("test-race-update")]
     public IActionResult TestRaceUpdate()

@@ -29,6 +29,8 @@ public class MessageParser
             return MessageType.StartedHeader;
         if (text.Contains("*** ResultsHeader"))
             return MessageType.ResultsHeader;
+        if (text.Contains("Message Header") && text.Contains("Message Trailer"))
+            return MessageType.Announcement;
         
         return MessageType.Unknown;
     }
@@ -612,6 +614,50 @@ public class MessageParser
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error parsing racer from Results line: {Line}", line);
+        }
+        
+        return null;
+    }
+
+    public string? ParseAnnouncementMessage(string text)
+    {
+        try
+        {
+            var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var messageLines = new List<string>();
+            bool inMessage = false;
+
+            foreach (var line in lines)
+            {
+                var trimmedLine = line.Trim();
+                
+                if (trimmedLine.Contains("Message Header"))
+                {
+                    inMessage = true;
+                    continue;
+                }
+                
+                if (trimmedLine.Contains("Message Trailer"))
+                {
+                    break;
+                }
+                
+                if (inMessage && !string.IsNullOrWhiteSpace(trimmedLine))
+                {
+                    messageLines.Add(trimmedLine);
+                }
+            }
+
+            if (messageLines.Any())
+            {
+                var message = string.Join(" ", messageLines);
+                _logger.LogInformation("Parsed announcement message: {Message}", message);
+                return message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error parsing announcement message from: {Text}", text);
         }
         
         return null;

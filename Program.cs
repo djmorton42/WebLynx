@@ -52,7 +52,11 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
         Path.Combine(Directory.GetCurrentDirectory(), "Views")),
-    RequestPath = "/views"
+    RequestPath = "/views",
+    ContentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider
+    {
+        Mappings = { [".avif"] = "image/avif" }
+    }
 });
 
 // Serve other static files (like favicon.ico) from wwwroot
