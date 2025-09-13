@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="/views/lap_counter/styles.css">
+  </head>
+  <body>
+    <div class="lap-counter-grid" id="lap-counter-grid">
+      <!-- Lap counters will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for lap counter cards -->
+    <template id="lap-counter-template">
+      <div class="lap-counter-card">
+        <div class="laps-remaining"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Configuration
+      const UPDATE_INTERVAL = 250; // milliseconds
+      
+      // Lane color mapping
+      const LANE_COLORS = {
+        1: '#ffff00',  // Yellow
+        2: '#000000',  // Black
+        3: '#00ffff',  // Light Blue
+        4: '#ff0000',  // Red
+        5: '#ffffff',  // White
+        6: '#000080',  // Navy Blue
+        7: '#808080',  // Grey
+        8: '#ffc0cb',  // Pink
+        9: '#ffa500',  // Orange
+        10: '#008000'  // Green
+      };
+      
+      // Stroke colors for dark backgrounds
+      const STROKE_COLORS = {
+        1: '#000000',  // Black stroke for yellow
+        2: '#ffffff',  // White stroke for black
+        3: '#000000',  // Black stroke for cyan
+        4: '#ffffff',  // White stroke for red
+        5: '#000000',  // Black stroke for white
+        6: '#ffffff',  // White stroke for navy blue
+        7: '#ffffff',  // White stroke for grey
+        8: '#000000',  // Black stroke for pink
+        9: '#000000',  // Black stroke for orange
+        10: '#ffffff'  // White stroke for green
+      };
+      
+      function getLaneColor(lane) {
+        return LANE_COLORS[lane] || '#333333';
+      }
+      
+      function getStrokeColor(lane) {
+        return STROKE_COLORS[lane] || '#ffffff';
+      }
+      
+      function createLapCounterCard(racer) {
+        const template = document.getElementById('lap-counter-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate only the laps remaining with lane color
+        clone.querySelector('.laps-remaining').textContent = racer.lapsRemaining || '-';
+        clone.querySelector('.laps-remaining').style.color = getLaneColor(racer.lane);
+        clone.querySelector('.laps-remaining').style.textShadow = `3px 3px 0px ${getStrokeColor(racer.lane)}, -3px -3px 0px ${getStrokeColor(racer.lane)}, 3px -3px 0px ${getStrokeColor(racer.lane)}, -3px 3px 0px ${getStrokeColor(racer.lane)}`;
+        
+        return clone;
+      }
+      
+      function createLapCounterRow(racers) {
+        const row = document.createElement('div');
+        row.className = 'lap-counter-row';
+        
+        // Add lap counter cards for each racer
+        for (let i = 0; i < racers.length; i++) {
+          row.appendChild(createLapCounterCard(racers[i]));
+        }
+        
+        return row;
+      }
+      
+      function updateLapCounterData() {
+        fetch(`/api/race/race-data?sortBy=lane`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update lap counter grid
+            const lapCounterGrid = document.getElementById('lap-counter-grid');
+            lapCounterGrid.innerHTML = '';
+            
+            // Only display racers that are actually in the race
+            const activeRacers = data.racers.filter(racer => racer.lane > 0);
+            
+            // Set data attribute for dynamic sizing
+            lapCounterGrid.setAttribute('data-racers', activeRacers.length);
+            
+            // Group racers into rows based on count for optimal screen usage
+            if (activeRacers.length <= 2) {
+              // Single row for 1-2 racers
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers));
+            } else if (activeRacers.length <= 4) {
+              // Single row for 3-4 racers
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers));
+            } else if (activeRacers.length <= 6) {
+              // Two rows for 5-6 racers
+              const firstRow = activeRacers.slice(0, 3);
+              const secondRow = activeRacers.slice(3);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+            } else if (activeRacers.length <= 8) {
+              // Two rows for 7-8 racers
+              const firstRow = activeRacers.slice(0, 4);
+              const secondRow = activeRacers.slice(4);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+            } else {
+              // 5x2 grid for 9-10 racers
+              const firstRow = activeRacers.slice(0, 5);
+              const secondRow = activeRacers.slice(5);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching lap counter data:', error);
+          });
+      }
+      
+      // Start updating
+      updateLapCounterData(); // Initial load
+      setInterval(updateLapCounterData, UPDATE_INTERVAL);
+    </script>
+  </body>
+</html>

@@ -33,6 +33,27 @@ public class TemplateService
         }
     }
 
+    public string ProcessLapCounterTemplate(RaceData raceData)
+    {
+        try
+        {
+            var lapCounterTemplatePath = Path.Combine("Views", "lap_counter", "template.html");
+            if (!File.Exists(lapCounterTemplatePath))
+            {
+                _logger.LogError("Lap counter template file not found: {TemplatePath}", lapCounterTemplatePath);
+                return GenerateLapCounterFallbackHtml(raceData);
+            }
+
+            var template = File.ReadAllText(lapCounterTemplatePath);
+            return template;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing lap counter template");
+            return GenerateLapCounterFallbackHtml(raceData);
+        }
+    }
+
 
     public List<Racer> SortRacers(List<Racer> racers, string sortBy)
     {
@@ -66,6 +87,33 @@ public class TemplateService
           </div>
           <div class=""time"">--:--.---</div>
           <div class=""lap-count"">-</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Simple auto-refresh every 250ms
+      setInterval(() => {{
+        window.location.reload();
+      }}, 250);
+    </script>
+  </body>
+</html>";
+    }
+
+    private string GenerateLapCounterFallbackHtml(RaceData raceData)
+    {
+        return $@"<!DOCTYPE html>
+<html>
+  <head>
+    <link rel=""stylesheet"" href=""/views/lap_counter/styles.css"">
+  </head>
+  <body>
+    <div class=""lap-counter-grid"">
+      <div class=""lap-counter-row"">
+        <div class=""lap-counter-card"">
+          <div class=""lane-number"">-</div>
+          <div class=""skater-name"">No Race Data</div>
+          <div class=""laps-remaining"">-</div>
         </div>
       </div>
     </div>

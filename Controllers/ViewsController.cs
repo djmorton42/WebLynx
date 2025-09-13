@@ -34,6 +34,22 @@ public class ViewsController : Controller
         }
     }
 
+    [HttpGet("views/lap_counter")]
+    public IActionResult GetLapCounter()
+    {
+        try
+        {
+            var raceData = _raceStateManager.GetCurrentRaceState();
+            var html = _templateService.ProcessLapCounterTemplate(raceData);
+            return Content(html, "text/html");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating lap counter view");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
     [HttpGet("test-race-update")]
     public IActionResult TestRaceUpdate()
