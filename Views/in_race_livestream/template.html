@@ -161,13 +161,14 @@
         
         if (racerGrid && raceClock) {
           const gridRect = racerGrid.getBoundingClientRect();
-          const clockHeight = 60; // Height of the race clock
-          const spacing = 10; // Space between clock and grid
+          const clockHeight = 50; // Height of the race clock (reduced for compact layout)
+          const spacing = 15; // Space between clock and grid
+          const clockWidth = 240; // Width of the race clock
           
-          // Position clock above the grid, aligned to the right
+          // Position clock above the grid, aligned to the right edge of the grid
           raceClock.style.position = 'fixed';
           raceClock.style.top = (gridRect.top - clockHeight - spacing) + 'px';
-          raceClock.style.right = '20px';
+          raceClock.style.right = (window.innerWidth - gridRect.right) + 'px'; // Align with grid's right edge
           raceClock.style.bottom = 'auto';
         }
       }
