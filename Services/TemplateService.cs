@@ -63,7 +63,9 @@ public class TemplateService
             { 10, "#008000" } // Green
         };
 
-        var racers = raceData.Racers.OrderBy(r => r.Lane).ToList();
+        var racers = raceData.Racers.OrderBy(r => r.Place > 0 ? r.Place : int.MaxValue)
+                                   .ThenBy(r => r.Lane)
+                                   .ToList();
         var racerRows = new List<string>();
 
         // Group racers into rows of 4

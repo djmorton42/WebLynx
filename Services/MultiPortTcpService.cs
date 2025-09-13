@@ -143,6 +143,12 @@ public class MultiPortTcpService : IDisposable
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Cancellation was requested, this is expected during shutdown
+            var remoteEndPoint = client?.Client?.RemoteEndPoint?.ToString() ?? "unknown";
+            _logger.LogDebug("Client connection cancelled for {ConnectionType} from {RemoteEndPoint}", connectionType, remoteEndPoint);
+        }
         catch (Exception ex)
         {
             var remoteEndPoint = client?.Client?.RemoteEndPoint?.ToString() ?? "unknown";
@@ -161,7 +167,7 @@ public class MultiPortTcpService : IDisposable
         }
     }
 
-    public void Stop()
+    public async Task StopAsync()
     {
         if (_isStopped)
         {
@@ -181,6 +187,9 @@ public class MultiPortTcpService : IDisposable
             // Already disposed, ignore
         }
         
+        // Give a brief moment for HandleClientAsync tasks to complete gracefully
+        await Task.Delay(100);
+        
         // Close all active client connections
         List<TcpClient> connectionsToClose;
         lock (_connectionsLock)
@@ -194,10 +203,13 @@ public class MultiPortTcpService : IDisposable
             {
                 if (connection?.Connected == true && connection.Client != null)
                 {
+                    // Get remote endpoint before closing
+                    var remoteEndPoint = connection.Client.RemoteEndPoint?.ToString() ?? "unknown";
+                    
                     // Explicitly shutdown the socket first to ensure clean termination
                     connection.Client.Shutdown(SocketShutdown.Both);
                     connection.Close();
-                    _logger.LogInformation("Closed client connection from {RemoteEndPoint}", connection.Client.RemoteEndPoint);
+                    _logger.LogInformation("Closed client connection from {RemoteEndPoint}", remoteEndPoint);
                 }
                 connection?.Dispose();
             }
@@ -239,6 +251,11 @@ public class MultiPortTcpService : IDisposable
         }
         
         _logger.LogInformation("TCP listeners stopped and all connections closed");
+    }
+
+    public void Stop()
+    {
+        StopAsync().GetAwaiter().GetResult();
     }
 
     public void Dispose()
