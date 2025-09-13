@@ -4,7 +4,11 @@
     <link rel="stylesheet" href="/views/in_race_livestream/styles.css">
   </head>
   <body>
-    <div class="race-clock" id="race-clock">--:--.-</div>
+    <div class="race-clock" id="race-clock">00:00.0</div>
+    
+    <div class="sso-logo">
+      <img src="/views/in_race_livestream/sso-logo.png" alt="SSO Logo">
+    </div>
     
     <div class="racer-grid" id="racer-grid">
       <!-- Racers will be populated by JavaScript -->
@@ -44,12 +48,12 @@
       };
       
       function formatTime(timeSpanString) {
-        if (!timeSpanString) return '--:--.---';
+        if (!timeSpanString) return '00:00.000';
         
         // TimeSpan is serialized as "HH:mm:ss.fffffff" format
         // We need to parse it and format as "mm:ss.fff"
         const parts = timeSpanString.split(':');
-        if (parts.length !== 3) return '--:--.---';
+        if (parts.length !== 3) return '00:00.000';
         
         const hours = parseInt(parts[0]) || 0;
         const minutes = parseInt(parts[1]) || 0;
@@ -72,12 +76,12 @@
       }
       
       function formatRaceTime(timeSpanString) {
-        if (!timeSpanString) return '--:--.-';
+        if (!timeSpanString) return '00:00.0';
         
         // TimeSpan is serialized as "HH:mm:ss.fffffff" format
         // We need to parse it and format as "mm:ss.f"
         const parts = timeSpanString.split(':');
-        if (parts.length !== 3) return '--:--.-';
+        if (parts.length !== 3) return '00:00.0';
         
         const hours = parseInt(parts[0]) || 0;
         const minutes = parseInt(parts[1]) || 0;
@@ -121,13 +125,16 @@
         const template = document.getElementById('racer-template');
         const clone = template.content.cloneNode(true);
         
-        // Populate with empty/default values
-        clone.querySelector('.position').textContent = '-';
-        clone.querySelector('.color-indicator').style.backgroundColor = '#333333';
-        clone.querySelector('.racer-name').textContent = '-';
-        clone.querySelector('.affiliation').textContent = '-';
-        clone.querySelector('.time').textContent = '--:--.---';
-        clone.querySelector('.lap-count').textContent = '-';
+        // Create empty card with no content
+        clone.querySelector('.position').textContent = '';
+        clone.querySelector('.color-indicator').style.backgroundColor = 'transparent';
+        clone.querySelector('.racer-name').textContent = '';
+        clone.querySelector('.affiliation').textContent = '';
+        clone.querySelector('.time').textContent = '';
+        clone.querySelector('.lap-count').textContent = '';
+        
+        // Add a class to identify empty cards for styling
+        clone.querySelector('.racer-card').classList.add('empty-card');
         
         return clone;
       }
@@ -148,6 +155,23 @@
         return row;
       }
       
+      function positionRaceClock() {
+        const racerGrid = document.getElementById('racer-grid');
+        const raceClock = document.getElementById('race-clock');
+        
+        if (racerGrid && raceClock) {
+          const gridRect = racerGrid.getBoundingClientRect();
+          const clockHeight = 60; // Height of the race clock
+          const spacing = 10; // Space between clock and grid
+          
+          // Position clock above the grid, aligned to the right
+          raceClock.style.position = 'fixed';
+          raceClock.style.top = (gridRect.top - clockHeight - spacing) + 'px';
+          raceClock.style.right = '20px';
+          raceClock.style.bottom = 'auto';
+        }
+      }
+      
       function updateRaceData() {
         fetch(`/api/race/race-data?sortBy=${SORT_BY}`)
           .then(response => {
@@ -164,11 +188,31 @@
             const racerGrid = document.getElementById('racer-grid');
             racerGrid.innerHTML = '';
             
-            // Group racers into rows of 4
-            for (let i = 0; i < data.racers.length; i += 4) {
-              const rowRacers = data.racers.slice(i, i + 4);
-              racerGrid.appendChild(createRacerRow(rowRacers));
+            // Only display racers that are actually in the race
+            const activeRacers = data.racers.filter(racer => racer.lane > 0);
+            
+            // Group racers into rows based on count
+            if (activeRacers.length <= 4) {
+              // Single row for 1-4 racers
+              racerGrid.appendChild(createRacerRow(activeRacers));
+            } else if (activeRacers.length <= 8) {
+              // First row with 4 racers, second row with remainder
+              const firstRow = activeRacers.slice(0, 4);
+              const secondRow = activeRacers.slice(4);
+              racerGrid.appendChild(createRacerRow(firstRow));
+              racerGrid.appendChild(createRacerRow(secondRow));
+            } else {
+              // First two rows with 4 racers each, third row with remainder
+              const firstRow = activeRacers.slice(0, 4);
+              const secondRow = activeRacers.slice(4, 8);
+              const thirdRow = activeRacers.slice(8);
+              racerGrid.appendChild(createRacerRow(firstRow));
+              racerGrid.appendChild(createRacerRow(secondRow));
+              racerGrid.appendChild(createRacerRow(thirdRow));
             }
+            
+            // Position race clock dynamically above the racer grid
+            positionRaceClock();
           })
           .catch(error => {
             console.error('Error fetching race data:', error);
