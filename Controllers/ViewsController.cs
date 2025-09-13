@@ -50,6 +50,22 @@ public class ViewsController : Controller
         }
     }
 
+    [HttpGet("views/broadcast_results")]
+    public IActionResult GetBroadcastResults()
+    {
+        try
+        {
+            var raceData = _raceStateManager.GetCurrentRaceState();
+            var html = _templateService.ProcessBroadcastResultsTemplate(raceData);
+            return Content(html, "text/html");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating broadcast results view");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
     [HttpGet("test-race-update")]
     public IActionResult TestRaceUpdate()

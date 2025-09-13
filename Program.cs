@@ -9,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
+// Configure broadcast settings
+builder.Services.Configure<WebLynx.Models.BroadcastSettings>(
+    builder.Configuration.GetSection("BroadcastSettings"));
+
 // Configure host options for faster shutdown
 builder.Services.Configure<HostOptions>(options =>
 {

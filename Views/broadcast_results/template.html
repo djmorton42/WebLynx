@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="/views/broadcast_results/styles.css">
+  </head>
+  <body>
+    <div class="broadcast-overlay">
+      <!-- Header Section -->
+      <div class="header-section">
+        <div class="meet-title" id="meet-title">{{MEET_TITLE}}</div>
+        <div class="event-name" id="event-name">{{EVENT_NAME}}</div>
+        <div class="unofficial-indicator">{{UNOFFICIAL_RESULTS_TEXT}}</div>
+        <div class="sso-logo">
+          <img src="/views/broadcast_results/sso-logo.png" alt="SSO Logo" />
+        </div>
+      </div>
+      
+      <!-- Race Details Bar -->
+      <div class="race-details-bar" id="race-details-bar">
+        M 1500-2 Qual 35B
+      </div>
+      
+      <!-- Results Table -->
+      <div class="results-container" id="results-container">
+        <!-- Results will be populated by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- HTML5 Template for result rows -->
+    <template id="result-template">
+      <div class="result-row">
+        <div class="position"></div>
+        <div class="racer-info">
+          <div class="racer-name"></div>
+          <div class="affiliation"></div>
+        </div>
+        <div class="lane-color"></div>
+        <div class="final-time"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Configuration
+      const UPDATE_INTERVAL = 1000; // milliseconds - less frequent for results
+      
+      // Lane color mapping (correct order: lane 1 = yellow, lane 2 = black, etc.)
+      const LANE_COLORS = {
+        1: '#ffff00',  // Yellow
+        2: '#000000',  // Black
+        3: '#87ceeb',  // Light Blue
+        4: '#ff0000',  // Red
+        5: '#ffffff',  // White
+        6: '#000080',  // Navy Blue
+        7: '#808080',  // Grey
+        8: '#ffc0cb',  // Pink
+        9: '#ffa500',  // Orange
+        10: '#008000'  // Green
+      };
+      
+      function formatTime(timeSpanString) {
+        if (!timeSpanString) return '--:--.---';
+        
+        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
+        // We need to parse it and format as "mm:ss.fff"
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '--:--.---';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        // Handle the fractional seconds part (7 digits)
+        let milliseconds = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+      }
+      
+      function getLaneColor(lane) {
+        return LANE_COLORS[lane] || '#333333';
+      }
+      
+      function createResultRow(racer, hasPlaces) {
+        const template = document.getElementById('result-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        const positionElement = clone.querySelector('.position');
+        if (racer.place > 0) {
+          positionElement.textContent = racer.place;
+        } else {
+          positionElement.textContent = `Lane ${racer.lane}`;
+        }
+        
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        
+        // Show/hide time box based on whether any racers have places
+        const timeElement = clone.querySelector('.final-time');
+        if (hasPlaces) {
+          // Show final time if available, otherwise show cumulative split time
+          const timeToShow = racer.finalTime || racer.cumulativeSplitTime;
+          timeElement.textContent = formatTime(timeToShow);
+          timeElement.style.display = 'block';
+        } else {
+          timeElement.style.display = 'none';
+        }
+        
+        return clone;
+      }
+      
+      function updateResultsData() {
+        fetch('/api/race/race-data?sortBy=place')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update meet title and event name if available
+            if (data.event) {
+              // You might want to customize these based on your data structure
+              // For now, using the default values from the template
+            }
+            
+            // Update race details bar
+            if (data.event) {
+              const eventName = data.event.eventName || 'Race Event';
+              const eventNumber = data.event.eventNumber || '';
+              const raceDetails = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+              document.getElementById('race-details-bar').textContent = raceDetails;
+            }
+            
+            // Update results container
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
+            
+            // Display all racers, sorted by placement first, then by lane
+            const allRacers = data.racers.filter(racer => racer.lane > 0);
+            
+            // Sort by place (1st, 2nd, 3rd, etc.), then by lane if no place
+            const sortedRacers = allRacers.sort((a, b) => {
+              // If both have places, sort by place
+              if (a.place > 0 && b.place > 0) {
+                return a.place - b.place;
+              }
+              // If only one has a place, that one comes first
+              if (a.place > 0 && b.place <= 0) return -1;
+              if (b.place > 0 && a.place <= 0) return 1;
+              // If neither has a place, sort by lane
+              return a.lane - b.lane;
+            });
+            
+            // Apply dynamic sizing class based on number of racers
+            resultsContainer.className = 'results-container';
+            if (sortedRacers.length >= 2 && sortedRacers.length <= 10) {
+              resultsContainer.classList.add(`racers-${sortedRacers.length}`);
+            }
+            
+            // Check if any racers have places set
+            const hasPlaces = sortedRacers.some(racer => racer.place > 0);
+            
+            // Show/hide unofficial results indicator based on whether places are set
+            const unofficialIndicator = document.querySelector('.unofficial-indicator');
+            if (unofficialIndicator) {
+              unofficialIndicator.style.display = hasPlaces ? 'block' : 'none';
+            }
+            
+            // Create result rows
+            sortedRacers.forEach(racer => {
+              const row = createResultRow(racer, hasPlaces);
+              resultsContainer.appendChild(row);
+            });
+          })
+          .catch(error => {
+            console.error('Error fetching race data:', error);
+          });
+      }
+      
+      // Start updating
+      updateResultsData(); // Initial load
+      setInterval(updateResultsData, UPDATE_INTERVAL);
+    </script>
+  </body>
+</html>

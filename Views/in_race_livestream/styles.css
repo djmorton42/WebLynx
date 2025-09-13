@@ -38,7 +38,7 @@ body {
 }
 
 .sso-logo img {
-  max-height: 320px;
+  max-height: 240px; /* 25% smaller than 320px */
   width: auto;
 }
 
