@@ -362,4 +362,5 @@ public class FixedWidthParserTests
         // Assert
         Assert.Equal("", result);
     }
+
 }

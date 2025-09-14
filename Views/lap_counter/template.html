@@ -55,25 +55,79 @@
         return STROKE_COLORS[lane] || '#ffffff';
       }
       
-      function createLapCounterCard(racer) {
+      function formatLapsDisplay(lapsRemaining, raceStatus) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(lapsRemaining).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (lapsRemaining % 1 === 0.5) {
+          // Show as "13 1/2" format for half laps
+          const wholePart = Math.floor(lapsRemaining);
+          return wholePart + ' 1/2';
+        }
+        
+        // Show as decimal for other cases
+        return lapsRemaining.toString();
+      }
+      
+      function createLapsDisplayHTML(lapsRemaining, raceStatus) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(lapsRemaining).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (lapsRemaining % 1 === 0.5) {
+          // Show as "13" with small "1/2" for half laps
+          const wholePart = Math.floor(lapsRemaining);
+          return `${wholePart}<span class="half-lap-fraction">1/2</span>`;
+        }
+        
+        // Show as decimal for other cases
+        return lapsRemaining.toString();
+      }
+      
+      function createLapCounterCard(racer, raceStatus) {
         const template = document.getElementById('lap-counter-template');
         const clone = template.content.cloneNode(true);
         
         // Populate only the delayed laps remaining with lane color
-        clone.querySelector('.laps-remaining').textContent = racer.delayedLapsRemaining || '-';
-        clone.querySelector('.laps-remaining').style.color = getLaneColor(racer.lane);
-        clone.querySelector('.laps-remaining').style.textShadow = `3px 3px 0px ${getStrokeColor(racer.lane)}, -3px -3px 0px ${getStrokeColor(racer.lane)}, 3px -3px 0px ${getStrokeColor(racer.lane)}, -3px 3px 0px ${getStrokeColor(racer.lane)}`;
+        const lapsElement = clone.querySelector('.laps-remaining');
+        const isHalfLap = racer.delayedLapsRemaining !== null && 
+                         racer.delayedLapsRemaining !== undefined && 
+                         racer.delayedLapsRemaining % 1 === 0.5 && 
+                         (raceStatus === 'NotStarted' || raceStatus === 0);
+        
+        if (isHalfLap) {
+          lapsElement.innerHTML = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus);
+          lapsElement.classList.add('half-lap');
+        } else {
+          lapsElement.textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus);
+        }
+        
+        lapsElement.style.color = getLaneColor(racer.lane);
+        lapsElement.style.textShadow = `3px 3px 0px ${getStrokeColor(racer.lane)}, -3px -3px 0px ${getStrokeColor(racer.lane)}, 3px -3px 0px ${getStrokeColor(racer.lane)}, -3px 3px 0px ${getStrokeColor(racer.lane)}`;
         
         return clone;
       }
       
-      function createLapCounterRow(racers) {
+      function createLapCounterRow(racers, raceStatus) {
         const row = document.createElement('div');
         row.className = 'lap-counter-row';
         
         // Add lap counter cards for each racer
         for (let i = 0; i < racers.length; i++) {
-          row.appendChild(createLapCounterCard(racers[i]));
+          row.appendChild(createLapCounterCard(racers[i], raceStatus));
         }
         
         return row;
@@ -101,28 +155,34 @@
             // Group racers into rows based on count for optimal screen usage
             if (activeRacers.length <= 2) {
               // Single row for 1-2 racers
-              lapCounterGrid.appendChild(createLapCounterRow(activeRacers));
-            } else if (activeRacers.length <= 4) {
-              // Single row for 3-4 racers
-              lapCounterGrid.appendChild(createLapCounterRow(activeRacers));
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status));
+            } else if (activeRacers.length <= 3) {
+              // Single row for 3 racers
+              lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status));
+            } else if (activeRacers.length === 4) {
+              // 2x2 grid for 4 racers
+              const firstRow = activeRacers.slice(0, 2);
+              const secondRow = activeRacers.slice(2);
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status));
             } else if (activeRacers.length <= 6) {
               // Two rows for 5-6 racers
               const firstRow = activeRacers.slice(0, 3);
               const secondRow = activeRacers.slice(3);
-              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
-              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status));
             } else if (activeRacers.length <= 8) {
               // Two rows for 7-8 racers
               const firstRow = activeRacers.slice(0, 4);
               const secondRow = activeRacers.slice(4);
-              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
-              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status));
             } else {
               // 5x2 grid for 9-10 racers
               const firstRow = activeRacers.slice(0, 5);
               const secondRow = activeRacers.slice(5);
-              lapCounterGrid.appendChild(createLapCounterRow(firstRow));
-              lapCounterGrid.appendChild(createLapCounterRow(secondRow));
+              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status));
+              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status));
             }
           })
           .catch(error => {

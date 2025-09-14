@@ -130,6 +130,21 @@ body {
   text-align: center;
   border: 1px solid #666;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+/* Special styling for half lap display */
+.lap-count.half-lap {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.lap-count .half-lap-fraction {
+  font-size: 0.8em;
+  vertical-align: baseline;
+  margin-left: 0.1em;
+  line-height: 1;
+  display: inline;
 }
 
 /* Empty cards should be invisible */

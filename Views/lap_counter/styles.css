@@ -14,7 +14,7 @@ body {
 .lap-counter-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   height: 100vh;
   padding: 20px;
   box-sizing: border-box;
@@ -24,7 +24,7 @@ body {
 
 .lap-counter-row {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   justify-content: center;
   align-items: center;
   flex: 1;
@@ -49,6 +49,25 @@ body {
   font-weight: bold;
   text-align: center;
   line-height: 1;
+  position: relative;
+}
+
+/* Special styling for half lap display */
+.laps-remaining.half-lap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform: translateY(-5%);
+}
+
+.laps-remaining .half-lap-fraction {
+  font-size: 0.15em;
+  vertical-align: baseline;
+  margin-top: -0.8em;
+  line-height: 1;
+  display: block;
 }
 
 /* Responsive adjustments for different screen sizes */
@@ -121,7 +140,7 @@ body {
 
 .lap-counter-grid[data-racers="3"] .laps-remaining,
 .lap-counter-grid[data-racers="4"] .laps-remaining {
-  font-size: 38em;
+  font-size: 32em;
 }
 
 .lap-counter-grid[data-racers="5"] .lap-counter-card,
@@ -132,18 +151,18 @@ body {
 
 .lap-counter-grid[data-racers="5"] .laps-remaining,
 .lap-counter-grid[data-racers="6"] .laps-remaining {
-  font-size: 34em;
+  font-size: 32em;
 }
 
 .lap-counter-grid[data-racers="7"] .lap-counter-card,
 .lap-counter-grid[data-racers="8"] .lap-counter-card {
-  max-width: 550px;
-  min-height: 450px;
+  max-width: 600px;
+  min-height: 500px;
 }
 
 .lap-counter-grid[data-racers="7"] .laps-remaining,
 .lap-counter-grid[data-racers="8"] .laps-remaining {
-  font-size: 30em;
+  font-size: 24em;
 }
 
 .lap-counter-grid[data-racers="9"] .lap-counter-card,
@@ -154,5 +173,5 @@ body {
 
 .lap-counter-grid[data-racers="9"] .laps-remaining,
 .lap-counter-grid[data-racers="10"] .laps-remaining {
-  font-size: 32em;
+  font-size: 19em;
 }

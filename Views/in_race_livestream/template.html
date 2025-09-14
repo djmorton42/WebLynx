@@ -106,7 +106,49 @@
         return LANE_COLORS[lane] || '#333333';
       }
       
-      function createRacerCard(racer) {
+      function formatLapsDisplay(lapsRemaining, raceStatus) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(lapsRemaining).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (lapsRemaining % 1 === 0.5) {
+          // Show as "13 1/2" format for half laps
+          const wholePart = Math.floor(lapsRemaining);
+          return wholePart + ' 1/2';
+        }
+        
+        // Show as decimal for other cases
+        return lapsRemaining.toString();
+      }
+      
+      function createLapsDisplayHTML(lapsRemaining, raceStatus) {
+        if (lapsRemaining === null || lapsRemaining === undefined) {
+          return '-';
+        }
+        
+        // If race has started (Running, Paused, or Finished), only show whole numbers
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(lapsRemaining).toString();
+        }
+        
+        // Before race starts, show decimal values including half laps
+        if (lapsRemaining % 1 === 0.5) {
+          // Show as "13" with small "1/2" for half laps
+          const wholePart = Math.floor(lapsRemaining);
+          return `${wholePart}<span class="half-lap-fraction">1/2</span>`;
+        }
+        
+        // Show as decimal for other cases
+        return lapsRemaining.toString();
+      }
+      
+      function createRacerCard(racer, raceStatus) {
         const template = document.getElementById('racer-template');
         const clone = template.content.cloneNode(true);
         
@@ -116,7 +158,19 @@
         clone.querySelector('.racer-name').textContent = racer.name || '-';
         clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
         clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
-        clone.querySelector('.lap-count').textContent = racer.delayedLapsRemaining || '-';
+        
+        const lapCountElement = clone.querySelector('.lap-count');
+        const isHalfLap = racer.delayedLapsRemaining !== null && 
+                         racer.delayedLapsRemaining !== undefined && 
+                         racer.delayedLapsRemaining % 1 === 0.5 && 
+                         (raceStatus === 'NotStarted' || raceStatus === 0);
+        
+        if (isHalfLap) {
+          lapCountElement.innerHTML = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus);
+          lapCountElement.classList.add('half-lap');
+        } else {
+          lapCountElement.textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus);
+        }
         
         return clone;
       }
@@ -139,14 +193,14 @@
         return clone;
       }
       
-      function createRacerRow(racers) {
+      function createRacerRow(racers, raceStatus) {
         const row = document.createElement('div');
         row.className = 'racer-row';
         
         // Add racer cards (up to 4)
         for (let i = 0; i < 4; i++) {
           if (i < racers.length) {
-            row.appendChild(createRacerCard(racers[i]));
+            row.appendChild(createRacerCard(racers[i], raceStatus));
           } else {
             row.appendChild(createEmptyRacerCard());
           }
@@ -195,21 +249,21 @@
             // Group racers into rows based on count
             if (activeRacers.length <= 4) {
               // Single row for 1-4 racers
-              racerGrid.appendChild(createRacerRow(activeRacers));
+              racerGrid.appendChild(createRacerRow(activeRacers, data.status));
             } else if (activeRacers.length <= 8) {
               // First row with 4 racers, second row with remainder
               const firstRow = activeRacers.slice(0, 4);
               const secondRow = activeRacers.slice(4);
-              racerGrid.appendChild(createRacerRow(firstRow));
-              racerGrid.appendChild(createRacerRow(secondRow));
+              racerGrid.appendChild(createRacerRow(firstRow, data.status));
+              racerGrid.appendChild(createRacerRow(secondRow, data.status));
             } else {
               // First two rows with 4 racers each, third row with remainder
               const firstRow = activeRacers.slice(0, 4);
               const secondRow = activeRacers.slice(4, 8);
               const thirdRow = activeRacers.slice(8);
-              racerGrid.appendChild(createRacerRow(firstRow));
-              racerGrid.appendChild(createRacerRow(secondRow));
-              racerGrid.appendChild(createRacerRow(thirdRow));
+              racerGrid.appendChild(createRacerRow(firstRow, data.status));
+              racerGrid.appendChild(createRacerRow(secondRow, data.status));
+              racerGrid.appendChild(createRacerRow(thirdRow, data.status));
             }
             
             // Position race clock dynamically above the racer grid

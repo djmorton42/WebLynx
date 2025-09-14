@@ -401,7 +401,44 @@ public class MessageParser
         return racers;
     }
 
-    private Racer? ParseRacerFromStartListLine(string line)
+    public decimal ParseLaps(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return 0m;
+        }
+
+        var trimmedText = text.Trim();
+        _logger.LogDebug("ParseLaps input: '{Text}' -> trimmed: '{TrimmedText}'", text, trimmedText);
+
+        // Handle "1/2" format for half laps
+        if (trimmedText.Contains("1/2"))
+        {
+            // Extract the number before "1/2" and add 0.5
+            var numberPart = trimmedText.Replace("1/2", "").Trim();
+            _logger.LogDebug("ParseLaps half lap - numberPart: '{NumberPart}'", numberPart);
+            if (int.TryParse(numberPart, out var wholeNumber))
+            {
+                var result = wholeNumber + 0.5m;
+                _logger.LogDebug("ParseLaps half lap result: {Result}", result);
+                return result;
+            }
+            _logger.LogDebug("ParseLaps half lap - just 1/2, returning 0.5");
+            return 0.5m; // Just "1/2" means 0.5 laps
+        }
+
+        // Handle regular decimal parsing
+        if (decimal.TryParse(trimmedText, out var decimalResult))
+        {
+            _logger.LogDebug("ParseLaps decimal result: {Result}", decimalResult);
+            return decimalResult;
+        }
+
+        _logger.LogDebug("ParseLaps - invalid input, returning 0");
+        return 0m;
+    }
+
+    public Racer? ParseRacerFromStartListLine(string line)
     {
         try
         {
@@ -410,15 +447,15 @@ public class MessageParser
                 //0         1         2         3         4         5         6         7         8         9
                 //0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789            
                 //Ln  Id   Name                                               Affiliation                    Laps
-                //--- ---- -------------------------------------------------- ------------------------------ -----
+                //--- ---- -------------------------------------------------- ------------------------------ ------
                 //1   100  Person mcPersonFace                                Ottawa SSC"                    5
-
 
                 var lane = FixedWidthParser.TrimParse(line, 0, 3, int.Parse);
                 var id = FixedWidthParser.TrimParse(line, 4, 4, int.Parse);
                 var name = FixedWidthParser.TrimParse(line, 9, 50, "Unknown");
                 var affiliation = FixedWidthParser.TrimParse(line, 60, 30, s => s.TrimEnd('"'), "Unknown");
-                var laps = FixedWidthParser.TrimParse(line, 91, 5, int.Parse, 0);
+                var lapsText = FixedWidthParser.TrimParse(line, 91, 6, "");
+                var laps = ParseLaps(lapsText);
                 
                 _logger.LogDebug("Parsed racer: Lane={Lane}, ID={Id}, Name='{Name}', Affiliation='{Affiliation}'", 
                     lane, id, name, affiliation);
@@ -427,8 +464,8 @@ public class MessageParser
                 {
                     Lane = lane,
                     Id = id,
-                    Name = name,
-                    Affiliation = affiliation,
+                    Name = name ?? string.Empty,
+                    Affiliation = affiliation ?? string.Empty,
                     LapsRemaining = laps
                 };
             }
@@ -445,7 +482,7 @@ public class MessageParser
         return null;
     }
 
-    private Racer? ParseRacerFromStartedLine(string line)
+    public Racer? ParseRacerFromStartedLine(string line)
     {
         try
         {
@@ -454,6 +491,8 @@ public class MessageParser
 // Plc Ln  ReacTime Cum ST   Last ST  Best ST  Laps   Speed  Pace  ^M
 // --- --- -------- -------- -------- -------- ------ ------ ------^M
 // 1   3            56.4     12.1     10.2     0             11.280
+// 1   1            56.4     12.1     10.2     4 1/2         11.280
+// 2   2            58.2     13.5     11.8     13 1/2        12.450
 
 
             if (FixedWidthParser.TrimParse(line, 0, 3) == "") 
@@ -470,41 +509,11 @@ public class MessageParser
             var cumulativeSplitTime = FixedWidthParser.TrimParse(line, 17, 8, TimeSpanParser.Parse);
             var lastSplitTime = FixedWidthParser.TrimParse(line, 26, 8, TimeSpanParser.Parse);
             var bestSplitTime = FixedWidthParser.TrimParse(line, 35, 8, TimeSpanParser.Parse);
-            var lapsRemaining = FixedWidthParser.TrimParse(line, 44, 6, int.Parse);
+            var lapsText = FixedWidthParser.TrimParse(line, 44, 6, "");
+            var lapsRemaining = ParseLaps(lapsText);
 
-
-            /*                
-                        var place = int.Parse(line.Substring(0, 3).Trim());
-                        var lane = int.Parse(line.Substring(4,3).Trim());
-
-                        var reactionTime = ParseTimeSpan(line.Substring(8, 8).Trim());
-                        var cumulativeSplitTime = ParseTimeSpan(line.Substring(17, 8).Trim());
-                        var lastSplitTime = ParseTimeSpan(line.Substring(26, 8).Trim());
-                        var bestSplitTime = ParseTimeSpan(line.Substring(35, 8).Trim());
-                        var lapsRemaining = int.Parse(line.Substring(44, 6).Trim());
-            */
-
-            decimal? pace = FixedWidthParser.TrimParse(line, 51, 6, decimal.Parse, -1);
-            decimal? speed = FixedWidthParser.TrimParse(line, 56, 6, decimal.Parse, -1);
-
-            // Parse speed and pace
-            /*
-            decimal? speed = null;
-            decimal? pace = null;
-            
-            if (line.Length > 51)
-            {
-                var speedStr = line.Substring(51, 6).Trim();
-                if (!string.IsNullOrWhiteSpace(speedStr) && decimal.TryParse(speedStr, out var speedVal))
-                    speed = speedVal;
-            }
-            
-            if (line.Length > 58)
-            {
-                var paceStr = line.Substring(56).Trim();
-                if (!string.IsNullOrWhiteSpace(paceStr) && decimal.TryParse(paceStr, out var paceVal))
-                    pace = paceVal;
-            }*/
+            decimal? pace = FixedWidthParser.TrimParse(line, 58, 6, decimal.Parse, -1);
+            decimal? speed = FixedWidthParser.TrimParse(line, 51, 6, decimal.Parse, -1);
             
             return new Racer
             {
@@ -536,19 +545,9 @@ public class MessageParser
             //Plc Ln  Id   Name                                               Affiliation                    Time     Delta    ReacTime^M
             //--- --- ---- -------------------------------------------------- ------------------------------ -------- -------- --------^M
             //1   4   168  Some Person                                        SSC"                           12.1     12.100
-//0         1         2         3         4         5         6         7         8         9         10        11        12        13
-//01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
-//Plc Ln  Id   Name                                               Affiliation                    Time     Delta    ReacTime^M
-//--- --- ---- -------------------------------------------------- ------------------------------ -------- -------- --------^M
-//1   2   261  Autumn Vandermeer                                  London SSC"                    56.31    56.310            ^M
-//2   3   263  Violet Velicevic                                   Milton SSC"                    56.32    0.010             ^M
-//3   1   100  Adella Akanko                                      Ottawa SSC"                    57.1     0.780             ^M
-//4   4   128  Emilie Caserta                                     Oakville SSC"                  1:03.612 6.512             ^M
-//5   5   167  Laura Hernandez                                    Hamilton SSC"                  1:05.912 2.300
 
             if (line.Length >= 60) // Minimum length check
             {
-                // Parse place (first 3 characters)
                 var place = FixedWidthParser.TrimParse(line, 0, 3, int.Parse, 0);
                 if (place == 0)
                 {
@@ -559,31 +558,13 @@ public class MessageParser
                 var id = FixedWidthParser.TrimParse(line, 8, 4, int.Parse, 0);
                 var name = FixedWidthParser.TrimParse(line, 13, 50, "Unknown");
                 var affiliation = FixedWidthParser.TrimParse(line, 64, 30, s => s.TrimEnd('"'), "Unknown");
-                /*
-                                                                                                                var placeStr = line.Substring(0, 3).Trim();
-                                                                                                                if (string.IsNullOrWhiteSpace(placeStr))
-                                                                                                                    return null; // Skip lines without place (unfinished racers)
-                                                                                                */
-
-                //var place = int.Parse(placeStr);
-                //var lane = int.Parse(line.Substring(4, 3).Trim());
-                //var id = int.Parse(line.Substring(8, 4).Trim());
-
-                // Name: 51 characters starting at position 11
-                //var name = line.Substring(13, 50).Trim();
-
-                // Affiliation: 31 characters starting at position 62
-                //var affiliation = line.Substring(64, 30).Trim().TrimEnd('"');
 
                 TimeSpan? finalTime = null;
                 TimeSpan? deltaTime = null;
                 TimeSpan? reactionTime = null;
 
-                // If the `line` is at least 96 characters long, grab the rest of the string, split it based on whitespace (there maybe multiple whitespace characters)
-                // and then set the variables finalTime, deltaTime and reactionTime to the result of calling ParseTimeSpan on each element if there is any value present.
-
                 var times = FixedWidthParser.TrimParse(line, 95, 26, string.Empty);
-                var parts = times.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                var parts = times?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
                 if (parts.Length >= 1)
                 {
                     finalTime = TimeSpanParser.Parse(parts[0]);
@@ -602,8 +583,8 @@ public class MessageParser
                     Place = place,
                     Lane = lane,
                     Id = id,
-                    Name = name,
-                    Affiliation = affiliation,
+                    Name = name ?? string.Empty,
+                    Affiliation = affiliation ?? string.Empty,
                     FinalTime = finalTime,
                     DeltaTime = deltaTime,
                     ReactionTime = reactionTime,

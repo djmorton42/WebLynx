@@ -27,8 +27,8 @@ public class RaceEvent
 
 public class Racer
 {
-    private int _lapsRemaining;
-    private int _delayedLapsRemaining;
+    private decimal _lapsRemaining;
+    private decimal _delayedLapsRemaining;
     private DateTime? _lapCountLastChanged;
 
     public int Lane { get; set; }
@@ -41,7 +41,7 @@ public class Racer
     public TimeSpan? LastSplitTime { get; set; }
     public TimeSpan? BestSplitTime { get; set; }
     
-    public int LapsRemaining 
+    public decimal LapsRemaining 
     { 
         get => _lapsRemaining;
         set
@@ -70,7 +70,7 @@ public class Racer
     public TimeSpan? DeltaTime { get; set; }
     public bool HasFinished { get; set; }
 
-    public int GetDelayedLapsRemaining(int delaySeconds = 5)
+    public decimal GetDelayedLapsRemaining(int delaySeconds = 5)
     {
         if (_lapCountLastChanged == null)
         {
@@ -148,8 +148,8 @@ public class RacerApiResponse
     public TimeSpan? CumulativeSplitTime { get; set; }
     public TimeSpan? LastSplitTime { get; set; }
     public TimeSpan? BestSplitTime { get; set; }
-    public int LapsRemaining { get; set; }
-    public int DelayedLapsRemaining { get; set; }
+    public decimal LapsRemaining { get; set; }
+    public decimal DelayedLapsRemaining { get; set; }
     public DateTime? LapCountLastChanged { get; set; }
     public decimal? Speed { get; set; }
     public decimal? Pace { get; set; }
