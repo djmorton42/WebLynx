@@ -365,15 +365,27 @@ public class RaceStateManager
         if (!_lapCounterSettings.HalfLapModeEnabled)
             return;
 
-        _logger.LogInformation("Half-lap mode: Adding 1 to delayedLapsRemaining for all racers at race start");
-        
-        foreach (var racer in CurrentRace.Racers)
+        // Check if race has whole number of laps
+        if (HasHalfLapLaps())
         {
-            // For half-lap mode, we want the delayed value to be +1 from current
-            // so UI shows (delayed - 1) = (current + 1 - 1) = current for 5 seconds
-            var currentLaps = racer.LapsRemaining;
-            racer.DelayedLapsRemaining = currentLaps + 1;
-            racer.LapCountLastChanged = DateTime.UtcNow;
+            // For half-lap races, timing software handles the lap count changes
+            // We just need to update the timestamp so UI knows race has started
+            _logger.LogInformation("Half-lap mode: Half-lap race detected, timing software handles lap counts");
+            foreach (var racer in CurrentRace.Racers)
+            {
+                racer.LapCountLastChanged = DateTime.UtcNow;
+            }
+        }
+        else
+        {
+            // For whole-lap races, add 1 to delayed value so UI shows current value for 5 seconds
+            _logger.LogInformation("Half-lap mode: Adding 1 to delayedLapsRemaining for whole-lap race at race start");
+            foreach (var racer in CurrentRace.Racers)
+            {
+                var currentLaps = racer.LapsRemaining;
+                racer.DelayedLapsRemaining = currentLaps + 1;
+                racer.LapCountLastChanged = DateTime.UtcNow;
+            }
         }
     }
 
