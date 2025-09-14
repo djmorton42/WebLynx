@@ -60,8 +60,8 @@
           return '-';
         }
         
-        // If race has started (Running, Paused, or Finished), only show whole numbers
-        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+        // If race has started (Running=1, Paused=2, or Finished=3), only show whole numbers
+        if (raceStatus === 1 || raceStatus === 2 || raceStatus === 3) {
           return Math.floor(lapsRemaining).toString();
         }
         
@@ -81,8 +81,8 @@
           return '-';
         }
         
-        // If race has started (Running, Paused, or Finished), only show whole numbers
-        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+        // If race has started (Running=1, Paused=2, or Finished=3), only show whole numbers
+        if (raceStatus === 1 || raceStatus === 2 || raceStatus === 3) {
           return Math.floor(lapsRemaining).toString();
         }
         
@@ -101,18 +101,25 @@
         const template = document.getElementById('lap-counter-template');
         const clone = template.content.cloneNode(true);
         
-        // Populate only the delayed laps remaining with lane color
+        // Always use delayedLapsRemaining - formatLapsDisplay handles race status logic
         const lapsElement = clone.querySelector('.laps-remaining');
-        const isHalfLap = racer.delayedLapsRemaining !== null && 
+        const formattedLaps = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus);
+        
+        // Check if we need to add half-lap styling for the special display
+        // Only show half-lap formatting if race is NOT running AND it's actually a half-lap
+        const isHalfLap = (raceStatus === 0) && // Only before race starts
+                         racer.delayedLapsRemaining !== null && 
                          racer.delayedLapsRemaining !== undefined && 
-                         racer.delayedLapsRemaining % 1 === 0.5 && 
-                         (raceStatus === 'NotStarted' || raceStatus === 0);
+                         racer.delayedLapsRemaining % 1 === 0.5;
         
         if (isHalfLap) {
-          lapsElement.innerHTML = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus);
+          // For half laps BEFORE race starts, use createLapsDisplayHTML for special formatting
+          const htmlLaps = createLapsDisplayHTML(racer.delayedLapsRemaining, raceStatus);
+          lapsElement.innerHTML = htmlLaps;
           lapsElement.classList.add('half-lap');
         } else {
-          lapsElement.textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus);
+          // Regular display - formatLapsDisplay handles showing whole numbers when running
+          lapsElement.textContent = formattedLaps;
         }
         
         lapsElement.style.color = getLaneColor(racer.lane);
@@ -156,15 +163,9 @@
             if (activeRacers.length <= 2) {
               // Single row for 1-2 racers
               lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status));
-            } else if (activeRacers.length <= 3) {
-              // Single row for 3 racers
+            } else if (activeRacers.length <= 4) {
+              // Single row for 3-4 racers
               lapCounterGrid.appendChild(createLapCounterRow(activeRacers, data.status));
-            } else if (activeRacers.length === 4) {
-              // 2x2 grid for 4 racers
-              const firstRow = activeRacers.slice(0, 2);
-              const secondRow = activeRacers.slice(2);
-              lapCounterGrid.appendChild(createLapCounterRow(firstRow, data.status));
-              lapCounterGrid.appendChild(createLapCounterRow(secondRow, data.status));
             } else if (activeRacers.length <= 6) {
               // Two rows for 5-6 racers
               const firstRow = activeRacers.slice(0, 3);

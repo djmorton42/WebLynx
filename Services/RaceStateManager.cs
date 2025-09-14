@@ -100,7 +100,15 @@ public class RaceStateManager
         if (runningTime.HasValue)
         {
             CurrentRace.CurrentTime = runningTime.Value;
-            CurrentRace.Status = RaceStatus.Running;
+            
+            // If race isn't already running, start it when we get the first running time
+            if (CurrentRace.Status == RaceStatus.NotStarted)
+            {
+                CurrentRace.Status = RaceStatus.Running;
+                _logger.LogInformation("Race started - status changed to Running (triggered by running time)");
+                Console.WriteLine($"🏁 Race started - status changed to Running (triggered by running time)");
+            }
+            
             //_logger.LogInformation("Updated running time to {Time}", runningTime.Value);
         }
     }
@@ -183,6 +191,11 @@ public class RaceStateManager
 
     private void ProcessStartedHeaderMessage(string text)
     {
+        // StartedHeader indicates the race has started
+        CurrentRace.Status = RaceStatus.Running;
+        _logger.LogInformation("Race started - status changed to Running (triggered by StartedHeader)");
+        Console.WriteLine($"🏁 Race started - status changed to Running (triggered by StartedHeader)");
+        
         var eventData = _messageParser.ParseStartListHeader(text);
         if (eventData != null)
         {

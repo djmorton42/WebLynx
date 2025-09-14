@@ -53,6 +53,12 @@ public class Racer
                 // Update the timestamp when lap count changes
                 _lapCountLastChanged = DateTime.UtcNow;
                 _lapsRemaining = value;
+                
+                // If this is the first time setting laps remaining, initialize delayed value
+                if (_delayedLapsRemaining == 0 && value > 0)
+                {
+                    _delayedLapsRemaining = value;
+                }
             }
         }
     }
@@ -92,6 +98,12 @@ public class Racer
     {
         _delayedLapsRemaining = _lapsRemaining;
         _lapCountLastChanged = DateTime.UtcNow;
+        
+        // If delayed value is 0 but current value is not, fix it
+        if (_delayedLapsRemaining == 0 && _lapsRemaining > 0)
+        {
+            _delayedLapsRemaining = _lapsRemaining;
+        }
     }
 
     public override string ToString()
