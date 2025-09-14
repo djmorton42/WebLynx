@@ -133,6 +133,14 @@
               }
             }
           }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
+          }
         }
         
         // If race has started (Running, Paused, or Finished), only show whole numbers
@@ -177,6 +185,14 @@
                 return '-';
               }
             }
+          }
+        } else {
+          // Half-lap mode disabled: always subtract 1 from display value
+          displayValue = lapsRemaining - 1;
+          
+          // If the value would be negative, show hyphen
+          if (displayValue < 0) {
+            return '-';
           }
         }
         
