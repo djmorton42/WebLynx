@@ -107,6 +107,9 @@ public class RaceStateManager
                 CurrentRace.Status = RaceStatus.Running;
                 _logger.LogInformation("Race started - status changed to Running (triggered by running time)");
                 Console.WriteLine($"🏁 Race started - status changed to Running (triggered by running time)");
+                
+                // Handle half-lap mode logic for race start
+                HandleHalfLapModeRaceStart();
             }
             
             //_logger.LogInformation("Updated running time to {Time}", runningTime.Value);
@@ -191,10 +194,19 @@ public class RaceStateManager
 
     private void ProcessStartedHeaderMessage(string text)
     {
+        // Check if this is a new race start
+        bool wasNotStarted = CurrentRace.Status == RaceStatus.NotStarted;
+        
         // StartedHeader indicates the race has started
         CurrentRace.Status = RaceStatus.Running;
         _logger.LogInformation("Race started - status changed to Running (triggered by StartedHeader)");
         Console.WriteLine($"🏁 Race started - status changed to Running (triggered by StartedHeader)");
+        
+        // Handle half-lap mode logic for race start (if this was a new start)
+        if (wasNotStarted)
+        {
+            HandleHalfLapModeRaceStart();
+        }
         
         var eventData = _messageParser.ParseStartListHeader(text);
         if (eventData != null)
@@ -220,12 +232,18 @@ public class RaceStateManager
                     existingRacer.LapsRemaining = racer.LapsRemaining;
                     existingRacer.Speed = racer.Speed;
                     existingRacer.Pace = racer.Pace;
+                    
+                    // Handle half-lap mode first crossing logic
+                    HandleHalfLapModeFirstCrossing(existingRacer);
                 }
                 else
                 {
                     // Add new racer if not found
                     racer.InitializeDelayedLapCount();
                     CurrentRace.Racers.Add(racer);
+                    
+                    // Handle half-lap mode first crossing logic for new racer
+                    HandleHalfLapModeFirstCrossing(racer);
                 }
             }
             
@@ -335,6 +353,43 @@ public class RaceStateManager
     public RaceData GetCurrentRaceState()
     {
         return CurrentRace;
+    }
+
+    private bool HasHalfLapLaps()
+    {
+        return CurrentRace.Racers.Any(r => r.LapsRemaining % 1 == 0.5m);
+    }
+
+    private void HandleHalfLapModeRaceStart()
+    {
+        if (!_lapCounterSettings.HalfLapModeEnabled)
+            return;
+
+        _logger.LogInformation("Half-lap mode: Adding 1 to delayedLapsRemaining for all racers at race start");
+        
+        foreach (var racer in CurrentRace.Racers)
+        {
+            // For half-lap mode, we want the delayed value to be +1 from current
+            // so UI shows (delayed - 1) = (current + 1 - 1) = current for 5 seconds
+            var currentLaps = racer.LapsRemaining;
+            racer.DelayedLapsRemaining = currentLaps + 1;
+            racer.LapCountLastChanged = DateTime.UtcNow;
+        }
+    }
+
+    private void HandleHalfLapModeFirstCrossing(Racer racer)
+    {
+        if (!_lapCounterSettings.HalfLapModeEnabled)
+            return;
+
+        // Check if race has half-lap laps
+        if (!HasHalfLapLaps())
+            return; // Skip if race doesn't have half-lap laps
+
+        // For half-lap races, the timing software changes what it sends after first crossing
+        // So we don't need to add 1 here - the timing software handles it
+        // This method is kept for potential future use but currently does nothing
+        _logger.LogDebug("Half-lap mode: Timing software handles lap count changes for half-lap races");
     }
 
 }

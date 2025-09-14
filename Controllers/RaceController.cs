@@ -121,6 +121,7 @@ public class RaceController : ControllerBase
                 Status = raceData.Status,
                 LastUpdated = raceData.LastUpdated,
                 AnnouncementMessage = raceData.AnnouncementMessage,
+                HalfLapModeEnabled = _lapCounterSettings.HalfLapModeEnabled,
                 Racers = sortedRacers.Select(r => new RacerApiResponse
                 {
                     Lane = r.Lane,
@@ -139,7 +140,8 @@ public class RaceController : ControllerBase
                     Pace = r.Pace,
                     FinalTime = r.FinalTime,
                     DeltaTime = r.DeltaTime,
-                    HasFinished = r.HasFinished
+                    HasFinished = r.HasFinished,
+                    HasFirstCrossing = r.CumulativeSplitTime.HasValue || r.LastSplitTime.HasValue
                 }).ToList()
             };
             

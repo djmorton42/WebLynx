@@ -62,6 +62,16 @@ public class Racer
             }
         }
     }
+
+    public decimal DelayedLapsRemaining
+    {
+        get => _delayedLapsRemaining;
+        set
+        {
+            _delayedLapsRemaining = value;
+            _lapCountLastChanged = DateTime.UtcNow;
+        }
+    }
     
     
     public DateTime? LapCountLastChanged 
@@ -147,6 +157,7 @@ public class RaceDataApiResponse
     public DateTime LastUpdated { get; set; }
     public List<RacerApiResponse> Racers { get; set; } = new();
     public string? AnnouncementMessage { get; set; }
+    public bool HalfLapModeEnabled { get; set; }
 }
 
 public class RacerApiResponse
@@ -168,5 +179,6 @@ public class RacerApiResponse
     public TimeSpan? FinalTime { get; set; }
     public TimeSpan? DeltaTime { get; set; }
     public bool HasFinished { get; set; }
+    public bool HasFirstCrossing { get; set; }
 }
 
