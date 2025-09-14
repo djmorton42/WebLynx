@@ -116,7 +116,7 @@
         clone.querySelector('.racer-name').textContent = racer.name || '-';
         clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
         clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
-        clone.querySelector('.lap-count').textContent = racer.lapsRemaining || '-';
+        clone.querySelector('.lap-count').textContent = racer.delayedLapsRemaining || '-';
         
         return clone;
       }

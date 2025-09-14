@@ -13,6 +13,10 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 builder.Services.Configure<WebLynx.Models.BroadcastSettings>(
     builder.Configuration.GetSection("BroadcastSettings"));
 
+// Configure lap counter settings
+builder.Services.Configure<WebLynx.Models.LapCounterSettings>(
+    builder.Configuration.GetSection("LapCounterSettings"));
+
 // Configure host options for faster shutdown
 builder.Services.Configure<HostOptions>(options =>
 {

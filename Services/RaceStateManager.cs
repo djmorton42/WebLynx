@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WebLynx.Models;
 
 namespace WebLynx.Services;
@@ -9,6 +10,7 @@ public class RaceStateManager
     private readonly ILogger<RaceStateManager> _logger;
     private readonly MessageParser _messageParser;
     private readonly DataLoggingService _dataLoggingService;
+    private readonly LapCounterSettings _lapCounterSettings;
     
     public RaceData CurrentRace { get; private set; } = new();
 
@@ -17,11 +19,13 @@ public class RaceStateManager
     public RaceStateManager(
         ILogger<RaceStateManager> logger, 
         MessageParser messageParser,
-        DataLoggingService dataLoggingService)
+        DataLoggingService dataLoggingService,
+        IOptions<LapCounterSettings> lapCounterSettings)
     {
         _logger = logger;
         _messageParser = messageParser;
         _dataLoggingService = dataLoggingService;
+        _lapCounterSettings = lapCounterSettings.Value;
     }
 
     public async Task ProcessMessageAsync(byte[] data, string clientInfo)
@@ -121,6 +125,12 @@ public class RaceStateManager
         
         CurrentRace.Racers = racers;
         
+        // Initialize delayed lap counts and timestamps
+        foreach (var racer in racers)
+        {
+            racer.InitializeDelayedLapCount();
+        }
+        
         if (racers.Any())
         {
             _logger.LogInformation("Loaded new racer list with {Count} racers", racers.Count);
@@ -201,6 +211,7 @@ public class RaceStateManager
                 else
                 {
                     // Add new racer if not found
+                    racer.InitializeDelayedLapCount();
                     CurrentRace.Racers.Add(racer);
                 }
             }
@@ -312,4 +323,5 @@ public class RaceStateManager
     {
         return CurrentRace;
     }
+
 }

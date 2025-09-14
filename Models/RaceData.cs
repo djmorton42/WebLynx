@@ -27,6 +27,10 @@ public class RaceEvent
 
 public class Racer
 {
+    private int _lapsRemaining;
+    private int _delayedLapsRemaining;
+    private DateTime? _lapCountLastChanged;
+
     public int Lane { get; set; }
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -36,12 +40,59 @@ public class Racer
     public TimeSpan? CumulativeSplitTime { get; set; }
     public TimeSpan? LastSplitTime { get; set; }
     public TimeSpan? BestSplitTime { get; set; }
-    public int LapsRemaining { get; set; }
+    
+    public int LapsRemaining 
+    { 
+        get => _lapsRemaining;
+        set
+        {
+            if (_lapsRemaining != value)
+            {
+                // Store the previous value as the delayed value
+                _delayedLapsRemaining = _lapsRemaining;
+                // Update the timestamp when lap count changes
+                _lapCountLastChanged = DateTime.UtcNow;
+                _lapsRemaining = value;
+            }
+        }
+    }
+    
+    
+    public DateTime? LapCountLastChanged 
+    { 
+        get => _lapCountLastChanged;
+        set => _lapCountLastChanged = value;
+    }
+    
     public decimal? Speed { get; set; }
     public decimal? Pace { get; set; }
     public TimeSpan? FinalTime { get; set; }
     public TimeSpan? DeltaTime { get; set; }
     public bool HasFinished { get; set; }
+
+    public int GetDelayedLapsRemaining(int delaySeconds = 5)
+    {
+        if (_lapCountLastChanged == null)
+        {
+            return _lapsRemaining;
+        }
+
+        var timeSinceChange = DateTime.UtcNow - _lapCountLastChanged.Value;
+        if (timeSinceChange.TotalSeconds >= delaySeconds)
+        {
+            // Enough time has passed, return the current lap count
+            return _lapsRemaining;
+        }
+
+        // Not enough time has passed, return the delayed count (previous value)
+        return _delayedLapsRemaining;
+    }
+
+    public void InitializeDelayedLapCount()
+    {
+        _delayedLapsRemaining = _lapsRemaining;
+        _lapCountLastChanged = DateTime.UtcNow;
+    }
 
     public override string ToString()
     {
@@ -98,6 +149,8 @@ public class RacerApiResponse
     public TimeSpan? LastSplitTime { get; set; }
     public TimeSpan? BestSplitTime { get; set; }
     public int LapsRemaining { get; set; }
+    public int DelayedLapsRemaining { get; set; }
+    public DateTime? LapCountLastChanged { get; set; }
     public decimal? Speed { get; set; }
     public decimal? Pace { get; set; }
     public TimeSpan? FinalTime { get; set; }

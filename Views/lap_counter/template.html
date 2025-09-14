@@ -59,8 +59,8 @@
         const template = document.getElementById('lap-counter-template');
         const clone = template.content.cloneNode(true);
         
-        // Populate only the laps remaining with lane color
-        clone.querySelector('.laps-remaining').textContent = racer.lapsRemaining || '-';
+        // Populate only the delayed laps remaining with lane color
+        clone.querySelector('.laps-remaining').textContent = racer.delayedLapsRemaining || '-';
         clone.querySelector('.laps-remaining').style.color = getLaneColor(racer.lane);
         clone.querySelector('.laps-remaining').style.textShadow = `3px 3px 0px ${getStrokeColor(racer.lane)}, -3px -3px 0px ${getStrokeColor(racer.lane)}, 3px -3px 0px ${getStrokeColor(racer.lane)}, -3px 3px 0px ${getStrokeColor(racer.lane)}`;
         

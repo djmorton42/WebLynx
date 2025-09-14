@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WebLynx.Models;
 using WebLynx.Services;
 
@@ -12,12 +13,14 @@ public class RaceController : ControllerBase
     private readonly ILogger<RaceController> _logger;
     private readonly RaceStateManager _raceStateManager;
     private readonly TemplateService _templateService;
+    private readonly LapCounterSettings _lapCounterSettings;
 
-    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager, TemplateService templateService)
+    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager, TemplateService templateService, IOptions<LapCounterSettings> lapCounterSettings)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
         _templateService = templateService;
+        _lapCounterSettings = lapCounterSettings.Value;
     }
 
     [HttpGet("current")]
@@ -130,6 +133,8 @@ public class RaceController : ControllerBase
                     LastSplitTime = r.LastSplitTime,
                     BestSplitTime = r.BestSplitTime,
                     LapsRemaining = r.LapsRemaining,
+                    DelayedLapsRemaining = r.GetDelayedLapsRemaining(_lapCounterSettings.DelayedDisplaySeconds),
+                    LapCountLastChanged = r.LapCountLastChanged,
                     Speed = r.Speed,
                     Pace = r.Pace,
                     FinalTime = r.FinalTime,
