@@ -276,4 +276,33 @@ public class MessageParserTests
         Assert.Equal(13.5m, racer2.LapsRemaining);
         Assert.Equal(12.450m, racer2.Pace);
     }
+
+    [Fact]
+    public void ParseRacerFromStartedLine_MinimalFormat_ReturnsCorrectValues()
+    {
+        // Arrange
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var logger = loggerFactory.CreateLogger<MessageParser>();
+        var parser = new MessageParser(logger);
+        
+        // Test minimal format (just lane and laps)
+        // Position: 01234567890123456789012345678901234567890123456789012345678901234567890123456789
+        // Line:    "          1                                       9"
+        string line = "          1                                       9";
+
+        // Act
+        var racer = parser.ParseRacerFromStartedLine(line);
+
+        // Assert
+        Assert.NotNull(racer);
+        Assert.Equal(0, racer.Place); // Default place for minimal format
+        Assert.Equal(1, racer.Lane);
+        Assert.Equal(9m, racer.LapsRemaining);
+        Assert.Null(racer.ReactionTime);
+        Assert.Null(racer.CumulativeSplitTime);
+        Assert.Null(racer.LastSplitTime);
+        Assert.Null(racer.BestSplitTime);
+        Assert.Null(racer.Speed);
+        Assert.Null(racer.Pace);
+    }
 }

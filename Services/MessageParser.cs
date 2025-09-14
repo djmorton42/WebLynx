@@ -494,15 +494,7 @@ public class MessageParser
 // 1   1            56.4     12.1     10.2     4 1/2         11.280
 // 2   2            58.2     13.5     11.8     13 1/2        12.450
 
-
-            if (FixedWidthParser.TrimParse(line, 0, 3) == "") 
-            {
-                _logger.LogInformation("Skipping racer from Started line: {Line}", line);
-                return null;
-            } else {
-                _logger.LogInformation("Parsing racer from Started line: {Line}", line);
-            }
-
+                        
             var place = FixedWidthParser.TrimParse(line, 0, 3, int.Parse);
             var lane = FixedWidthParser.TrimParse(line, 4, 3, int.Parse);
             var reactionTime = FixedWidthParser.TrimParse(line, 8, 8, TimeSpanParser.Parse);
