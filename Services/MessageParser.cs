@@ -636,6 +636,18 @@ public class MessageParser
         return null;
     }
 
+    public bool IsLapCountOnlyUpdate(List<Racer> racers)
+    {
+        // Check if ALL racers have no split/place data but do have lap counts
+        return racers.All(r => 
+            r.Place == 0 && 
+            r.ReactionTime == null && 
+            r.CumulativeSplitTime == null && 
+            r.LastSplitTime == null && 
+            r.BestSplitTime == null &&
+            r.LapsRemaining > 0);
+    }
+
     private string ExtractValue(string line)
     {
         var colonIndex = line.IndexOf(':');

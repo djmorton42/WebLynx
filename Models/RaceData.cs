@@ -116,6 +116,22 @@ public class Racer
         }
     }
 
+    public void UpdateLapsRemaining(decimal newValue, bool skipDelay = false)
+    {
+        if (skipDelay)
+        {
+            // Direct update without delay - set both current and delayed to the same value
+            _lapsRemaining = newValue;
+            _delayedLapsRemaining = newValue;
+            _lapCountLastChanged = DateTime.UtcNow;
+        }
+        else
+        {
+            // Use the normal setter with delay behavior
+            LapsRemaining = newValue;
+        }
+    }
+
     public override string ToString()
     {
         return $"Racer: Lane={Lane}, Id={Id}, Name='{Name}', Affiliation='{Affiliation}', Place={Place}, " +

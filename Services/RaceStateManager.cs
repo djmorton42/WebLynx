@@ -217,6 +217,9 @@ public class RaceStateManager
         var racers = _messageParser.ParseRacersFromStarted(text);
         if (racers.Any())
         {
+            // Check if this is a lap-count-only update (no split/place data)
+            bool isLapCountOnlyUpdate = _messageParser.IsLapCountOnlyUpdate(racers);
+            
             // Update existing racers with new data
             foreach (var racer in racers)
             {
@@ -229,7 +232,10 @@ public class RaceStateManager
                     existingRacer.CumulativeSplitTime = racer.CumulativeSplitTime;
                     existingRacer.LastSplitTime = racer.LastSplitTime;
                     existingRacer.BestSplitTime = racer.BestSplitTime;
-                    existingRacer.LapsRemaining = racer.LapsRemaining;
+                    
+                    // Update lap count with conditional delay behavior
+                    existingRacer.UpdateLapsRemaining(racer.LapsRemaining, skipDelay: isLapCountOnlyUpdate);
+                    
                     existingRacer.Speed = racer.Speed;
                     existingRacer.Pace = racer.Pace;
                     
