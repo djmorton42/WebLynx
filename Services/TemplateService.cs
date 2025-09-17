@@ -110,6 +110,27 @@ public class TemplateService
         }
     }
 
+    public string ProcessBroadcastRaceOverlayTemplate(RaceData raceData)
+    {
+        try
+        {
+            var broadcastRaceOverlayTemplatePath = Path.Combine("Views", "broadcast_race_overlay", "template.html");
+            if (!File.Exists(broadcastRaceOverlayTemplatePath))
+            {
+                _logger.LogError("Broadcast race overlay template file not found: {TemplatePath}", broadcastRaceOverlayTemplatePath);
+                return GenerateBroadcastRaceOverlayFallbackHtml(raceData);
+            }
+
+            var template = File.ReadAllText(broadcastRaceOverlayTemplatePath);
+            return template;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing broadcast race overlay template");
+            return GenerateBroadcastRaceOverlayFallbackHtml(raceData);
+        }
+    }
+
 
     public List<Racer> SortRacers(List<Racer> racers, string sortBy)
     {
@@ -248,6 +269,41 @@ public class TemplateService
       setInterval(() => {{
         window.location.reload();
       }}, 2000);
+    </script>
+  </body>
+</html>";
+    }
+
+    private string GenerateBroadcastRaceOverlayFallbackHtml(RaceData raceData)
+    {
+        var currentTime = raceData.CurrentTime?.ToString(@"mm\:ss\.f") ?? "--:--.-";
+        return $@"<!DOCTYPE html>
+<html>
+  <head>
+    <link rel=""stylesheet"" href=""/views/broadcast_race_overlay/styles.css"">
+  </head>
+  <body>
+    <div class=""sso-logo"">
+      <img src=""/views/broadcast_race_overlay/sso-logo.png"" alt=""SSO Logo"">
+    </div>
+    <div class=""race-clock"">{currentTime}</div>
+    <div class=""event-name"">Event Name</div>
+    <div class=""racer-stack"">
+      <div class=""racer-block"">
+        <div class=""lane-color"" style=""background-color: #333;""></div>
+        <div class=""racer-info"">
+          <div class=""racer-name"">No Race Data</div>
+          <div class=""affiliation"">-</div>
+        </div>
+        <div class=""time"">--:--.---</div>
+        <div class=""lap-count"">-</div>
+      </div>
+    </div>
+    <script>
+      // Simple auto-refresh every 250ms
+      setInterval(() => {{
+        window.location.reload();
+      }}, 250);
     </script>
   </body>
 </html>";

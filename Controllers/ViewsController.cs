@@ -82,6 +82,22 @@ public class ViewsController : Controller
         }
     }
 
+    [HttpGet("views/broadcast_race_overlay")]
+    public IActionResult GetBroadcastRaceOverlay()
+    {
+        try
+        {
+            var raceData = _raceStateManager.GetCurrentRaceState();
+            var html = _templateService.ProcessBroadcastRaceOverlayTemplate(raceData);
+            return Content(html, "text/html");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating broadcast race overlay view");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
     [HttpGet("views")]
     public IActionResult GetViewsIndex()
     {
@@ -156,6 +172,10 @@ public class ViewsController : Controller
             <li>
                 <a href=""/views/announcements"">Announcements</a>
                 <div class=""description"">Announcements and sponsor information display</div>
+            </li>
+            <li>
+                <a href=""/views/broadcast_race_overlay"">Broadcast Race Overlay</a>
+                <div class=""description"">Clean broadcast overlay with compact racer information and race clock</div>
             </li>
         </ul>
     </div>

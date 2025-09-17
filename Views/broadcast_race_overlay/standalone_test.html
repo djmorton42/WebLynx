@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Broadcast Race Overlay - Test</title>
+    <style>
+      body {
+        background-color: #f0f0f0; /* Light gray background for testing */
+        color: #000;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Logo in top-right corner */
+      .sso-logo {
+        position: fixed;
+        top: 30px;
+        right: 30px;
+        z-index: 1000;
+        opacity: 0.9;
+        background-color: #fff;
+        border: 2px solid #000;
+        border-radius: 8px;
+        padding: 10px;
+        width: 120px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      /* Overall race time in bottom-right corner */
+      .race-clock {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid #000;
+        border-radius: 8px;
+        padding: 15px 20px;
+        font-size: 2.2em;
+        font-weight: bold;
+        color: #000;
+        text-align: center;
+        min-width: 180px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      }
+
+      /* Racer stack on bottom-left */
+      .racer-stack {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 1000;
+        max-height: calc(100vh - 60px);
+        overflow-y: auto;
+      }
+
+      /* Individual racer block */
+      .racer-block {
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid #000;
+        border-radius: 8px;
+        padding: 12px 16px;
+        min-width: 400px;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Lane color indicator */
+      .lane-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 12px;
+        border: 2px solid #000;
+        flex-shrink: 0;
+      }
+
+      /* Racer information section */
+      .racer-info {
+        flex: 1;
+        margin-right: 12px;
+      }
+
+      .racer-name {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #000;
+        margin-bottom: 2px;
+        text-transform: uppercase;
+      }
+
+      .affiliation {
+        font-size: 0.9em;
+        color: #666;
+        font-weight: 500;
+      }
+
+      /* Time display */
+      .time {
+        color: #000;
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-right: 12px;
+        min-width: 80px;
+        text-align: right;
+      }
+
+      /* Lap count display */
+      .lap-count {
+        background-color: #f0f0f0;
+        color: #000;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 1.1em;
+        font-weight: bold;
+        min-width: 40px;
+        text-align: center;
+        border: 1px solid #ccc;
+      }
+
+      /* Responsive adjustments for different screen sizes */
+      @media (max-width: 1920px) {
+        body {
+          width: 100vw;
+          height: 100vh;
+        }
+        
+        .racer-block {
+          min-width: 350px;
+        }
+        
+        .race-clock {
+          font-size: 2em;
+          min-width: 160px;
+        }
+      }
+
+      /* Ensure text is always readable */
+      .racer-block,
+      .race-clock {
+        text-shadow: none;
+      }
+
+      /* Smooth transitions for dynamic updates */
+      .racer-block {
+        transition: all 0.2s ease-in-out;
+      }
+
+      .race-clock {
+        transition: all 0.2s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Logo in top-right corner -->
+    <div class="sso-logo">
+      SSO LOGO
+    </div>
+    
+    <!-- Overall race time in bottom-right corner -->
+    <div class="race-clock" id="race-clock">1:06.324</div>
+    
+    <!-- Racer information blocks stacked vertically on bottom-left -->
+    <div class="racer-stack" id="racer-stack">
+      <!-- Sample racer data will be populated by JavaScript -->
+    </div>
+    
+    <!-- HTML5 Template for racer blocks -->
+    <template id="racer-template">
+      <div class="racer-block">
+        <div class="lane-color"></div>
+        <div class="racer-info">
+          <div class="racer-name"></div>
+          <div class="affiliation"></div>
+        </div>
+        <div class="time"></div>
+        <div class="lap-count"></div>
+      </div>
+    </template>
+    
+    <script>
+      // Sample data for testing
+      const sampleRacers = [
+        {
+          lane: 1,
+          name: "Racer McRacerFace",
+          affiliation: "Cambridge SSC",
+          cumulativeSplitTime: "00:01:04.234",
+          delayedLapsRemaining: 4,
+          place: 1
+        },
+        {
+          lane: 2,
+          name: "Speed Demon",
+          affiliation: "Toronto Speed Club",
+          cumulativeSplitTime: "00:01:05.123",
+          delayedLapsRemaining: 3,
+          place: 2
+        },
+        {
+          lane: 3,
+          name: "Lightning Bolt",
+          affiliation: "Vancouver Ice",
+          cumulativeSplitTime: "00:01:05.456",
+          delayedLapsRemaining: 3,
+          place: 3
+        },
+        {
+          lane: 4,
+          name: "Ice Queen",
+          affiliation: "Calgary Blades",
+          cumulativeSplitTime: "00:01:06.789",
+          delayedLapsRemaining: 2,
+          place: 4
+        },
+        {
+          lane: 5,
+          name: "Speed Skater Pro",
+          affiliation: "Edmonton Eagles",
+          cumulativeSplitTime: "00:01:07.012",
+          delayedLapsRemaining: 2,
+          place: 5
+        }
+      ];
+      
+      // Lane color mapping
+      const LANE_COLORS = {
+        1: '#ffff00',  // Yellow
+        2: '#000000',  // Black
+        3: '#00ffff',  // Light Blue
+        4: '#ff0000',  // Red
+        5: '#ffffff',  // White
+        6: '#000080',  // Navy Blue
+        7: '#808080',  // Grey
+        8: '#ffc0cb',  // Pink
+        9: '#ffa500',  // Orange
+        10: '#008000'  // Green
+      };
+      
+      function formatTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.000';
+        
+        // TimeSpan is serialized as "HH:mm:ss.fffffff" format
+        // We need to parse it and format as "mm:ss.fff"
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.000';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        // Handle the fractional seconds part (7 digits)
+        let milliseconds = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+      }
+      
+      function getLaneColor(lane) {
+        return LANE_COLORS[lane] || '#333333';
+      }
+      
+      function createRacerBlock(racer) {
+        const template = document.getElementById('racer-template');
+        const clone = template.content.cloneNode(true);
+        
+        // Populate the cloned template
+        clone.querySelector('.lane-color').style.backgroundColor = getLaneColor(racer.lane);
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.affiliation').textContent = racer.affiliation || '-';
+        clone.querySelector('.time').textContent = formatTime(racer.cumulativeSplitTime);
+        clone.querySelector('.lap-count').textContent = racer.delayedLapsRemaining || '-';
+        
+        return clone;
+      }
+      
+      function loadSampleData() {
+        // Update race clock
+        document.getElementById('race-clock').textContent = '1:06.324';
+        
+        // Update racer stack
+        const racerStack = document.getElementById('racer-stack');
+        racerStack.innerHTML = '';
+        
+        // Add sample racer blocks
+        sampleRacers.forEach(racer => {
+          racerStack.appendChild(createRacerBlock(racer));
+        });
+      }
+      
+      // Load sample data when page loads
+      document.addEventListener('DOMContentLoaded', loadSampleData);
+    </script>
+  </body>
+</html>
