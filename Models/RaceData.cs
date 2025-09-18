@@ -88,6 +88,12 @@ public class Racer
 
     public decimal GetDelayedLapsRemaining(int delaySeconds = 5)
     {
+        // If laps remaining is 0 or negative, treat as finished - show dash immediately
+        if (_lapsRemaining <= 0)
+        {
+            return 0; // This will display as '-' in the UI
+        }
+
         if (_lapCountLastChanged == null)
         {
             return _lapsRemaining;
