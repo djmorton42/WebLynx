@@ -256,7 +256,7 @@
           // Position event name above the racer stack
           eventName.style.position = 'fixed';
           eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
-          eventName.style.left = '30px';
+          eventName.style.left = '50px';
         }
       }
       
@@ -272,9 +272,11 @@
             // Update race clock
             document.getElementById('race-clock').textContent = formatRaceTime(data.currentTime);
             
-            // Update event name
+            // Update event name with event number
             const eventName = data.event?.eventName || 'Event Name';
-            document.getElementById('event-name').textContent = eventName;
+            const eventNumber = data.event?.eventNumber || '';
+            const displayName = eventNumber ? `${eventNumber} - ${eventName}` : eventName;
+            document.getElementById('event-name').textContent = displayName;
             
             // Update racer stack
             const racerStack = document.getElementById('racer-stack');

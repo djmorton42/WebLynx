@@ -14,7 +14,7 @@ body {
 .sso-logo {
   position: fixed;
   top: 30px;
-  right: 30px;
+  right: 50px;
   z-index: 1000;
   opacity: 0.9;
 }
@@ -29,7 +29,7 @@ body {
 .race-clock {
   position: fixed;
   bottom: 60px;
-  right: 30px;
+  right: 50px;
   background-color: rgba(255, 255, 255, 0.95);
   border: 2px solid #000;
   border-radius: 8px;
@@ -46,7 +46,7 @@ body {
 /* Event name above racer stack */
 .event-name {
   position: fixed;
-  left: 30px;
+  left: 50px;
   background-color: rgba(255, 255, 255, 0.95);
   border: 2px solid #000;
   border-radius: 6px;
@@ -66,7 +66,7 @@ body {
 .racer-stack {
   position: fixed;
   bottom: 30px;
-  left: 30px;
+  left: 50px;
   display: flex;
   flex-direction: column;
   gap: 2px;

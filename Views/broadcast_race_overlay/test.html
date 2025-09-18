@@ -14,7 +14,7 @@
     <div class="race-clock" id="race-clock">1:06.324</div>
     
     <!-- Event name below race clock -->
-    <div class="event-name" id="event-name">500m Men's Final</div>
+    <div class="event-name" id="event-name">Event 1 - 500m Men's Final</div>
     
     <!-- Racer information blocks stacked vertically on bottom-left -->
     <div class="racer-stack" id="racer-stack">
@@ -191,7 +191,7 @@
           // Position event name above the racer stack
           eventName.style.position = 'fixed';
           eventName.style.bottom = (window.innerHeight - stackRect.top + spacing) + 'px';
-          eventName.style.left = '30px';
+          eventName.style.left = '50px';
         }
       }
       
@@ -200,7 +200,7 @@
         document.getElementById('race-clock').textContent = '1:06.324';
         
         // Update event name
-        document.getElementById('event-name').textContent = '500m Men\'s Final';
+        document.getElementById('event-name').textContent = 'Event 1 - 500m Men\'s Final';
         
         // Update racer stack
         const racerStack = document.getElementById('racer-stack');
