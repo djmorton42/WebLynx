@@ -17,6 +17,10 @@ builder.Services.Configure<WebLynx.Models.BroadcastSettings>(
 builder.Services.Configure<WebLynx.Models.LapCounterSettings>(
     builder.Configuration.GetSection("LapCounterSettings"));
 
+// Configure logging settings
+builder.Services.Configure<WebLynx.Models.LoggingSettings>(
+    builder.Configuration.GetSection("LoggingSettings"));
+
 // Configure host options for faster shutdown
 builder.Services.Configure<HostOptions>(options =>
 {

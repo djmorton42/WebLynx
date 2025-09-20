@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Text;
 using WebLynx.Models;
 
@@ -8,22 +9,34 @@ public class DataLoggingService
 {
     private readonly ILogger<DataLoggingService> _logger;
     private readonly string _logFilePath;
+    private readonly LoggingSettings _loggingSettings;
 
-    public DataLoggingService(ILogger<DataLoggingService> logger)
+    public DataLoggingService(ILogger<DataLoggingService> logger, IOptions<LoggingSettings> loggingSettings)
     {
         _logger = logger;
-        _logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "received_data.log");
+        _loggingSettings = loggingSettings.Value;
         
-        // Ensure the data directory exists
-        var dataDir = Path.GetDirectoryName(_logFilePath);
-        if (!Directory.Exists(dataDir))
+        // Create date-based filename
+        var dateString = DateTime.Now.ToString("yyyy-MM-dd");
+        var fileName = $"received_data.{dateString}.log";
+        _logFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log", fileName);
+        
+        // Ensure the log directory exists
+        var logDir = Path.GetDirectoryName(_logFilePath);
+        if (!Directory.Exists(logDir))
         {
-            Directory.CreateDirectory(dataDir!);
+            Directory.CreateDirectory(logDir!);
         }
     }
 
     public async Task LogDataAsync(byte[] data, string clientInfo)
     {
+        // Check if data logging is enabled
+        if (!_loggingSettings.EnableDataLogging)
+        {
+            return;
+        }
+
         try
         {
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");

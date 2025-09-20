@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WebLynx.Models;
 
 namespace WebLynx.Services;
@@ -10,12 +11,25 @@ public class LiveRaceFileWriter : BackgroundService
     private readonly ILogger<LiveRaceFileWriter> _logger;
     private readonly RaceStateManager _raceStateManager;
     private readonly string _outputFilePath;
+    private readonly LoggingSettings _loggingSettings;
 
-    public LiveRaceFileWriter(ILogger<LiveRaceFileWriter> logger, RaceStateManager raceStateManager)
+    public LiveRaceFileWriter(ILogger<LiveRaceFileWriter> logger, RaceStateManager raceStateManager, IOptions<LoggingSettings> loggingSettings)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
-        _outputFilePath = Path.Combine(Directory.GetCurrentDirectory(), "live_race_info.txt");
+        _loggingSettings = loggingSettings.Value;
+        
+        // Create date-based filename
+        var dateString = DateTime.Now.ToString("yyyy-MM-dd");
+        var fileName = $"live_race_info.{dateString}.txt";
+        _outputFilePath = Path.Combine(Directory.GetCurrentDirectory(), "log", fileName);
+        
+        // Ensure the log directory exists
+        var logDir = Path.GetDirectoryName(_outputFilePath);
+        if (!Directory.Exists(logDir))
+        {
+            Directory.CreateDirectory(logDir!);
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -47,6 +61,12 @@ public class LiveRaceFileWriter : BackgroundService
 
     private async Task WriteLiveRaceInfo()
     {
+        // Check if live race info logging is enabled
+        if (!_loggingSettings.EnableLiveRaceInfoLogging)
+        {
+            return;
+        }
+
         var raceData = _raceStateManager.GetCurrentRaceState();
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 

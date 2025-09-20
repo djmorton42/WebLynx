@@ -18,7 +18,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "🌐 Starting WebLynx..."
     echo "   - TCP listener will start on port 8080 (configurable in appsettings.json)"
-    echo "   - Data will be logged to data/received_data.log"
+    echo "   - Data will be logged to log/received_data.YYYY-MM-DD.log"
     echo "   - Press Ctrl+C to stop"
     echo ""
     echo "Waiting for connections from FinishLynx..."

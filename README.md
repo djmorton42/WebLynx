@@ -15,14 +15,37 @@ The application uses `appsettings.json` for configuration:
 ```json
 {
   "TcpSettings": {
-    "ListenPort": 8080,
+    "TimingPort": 8080,
+    "ResultsPort": 8081,
     "BufferSize": 4096
+  },
+  "HttpSettings": {
+    "Port": 5001
+  },
+  "BroadcastSettings": {
+    "MeetTitle": "Speed Skating Meet",
+    "EventSubtitle": "Race Event",
+    "UnofficialResultsText": "Unofficial Results"
+  },
+  "LapCounterSettings": {
+    "DelayedDisplaySeconds": 3,
+    "HalfLapModeEnabled": true
+  },
+  "LoggingSettings": {
+    "EnableDataLogging": true,
+    "EnableLiveRaceInfoLogging": true
   }
 }
 ```
 
-- `ListenPort`: Port to listen for TCP connections from FinishLynx
-- `BufferSize`: Buffer size for reading TCP data
+- `TcpSettings.TimingPort`: Port to listen for timing data from FinishLynx
+- `TcpSettings.ResultsPort`: Port to listen for results data from FinishLynx
+- `TcpSettings.BufferSize`: Buffer size for reading TCP data
+- `HttpSettings.Port`: Port for the HTTP web interface
+- `BroadcastSettings`: Configuration for broadcast overlays and displays
+- `LapCounterSettings`: Configuration for lap counter display behavior
+- `LoggingSettings.EnableDataLogging`: Enable/disable writing to `log/received_data.YYYY-MM-DD.log`
+- `LoggingSettings.EnableLiveRaceInfoLogging`: Enable/disable writing to `log/live_race_info.YYYY-MM-DD.txt`
 
 ## Building
 
@@ -46,7 +69,7 @@ This will create:
 
 ## Data Logging
 
-Received data is logged to `data/received_data.log` with:
+Received data is logged to `log/received_data.YYYY-MM-DD.log` with:
 - Timestamp and client information
 - Raw data in hex format
 - ASCII interpretation (when applicable)
