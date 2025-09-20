@@ -74,7 +74,7 @@ app.MapControllers();
 
 // Configure the HTTP port
 var httpPort = app.Configuration.GetValue<int>("HttpSettings:Port");
-app.Urls.Add($"http://localhost:{httpPort}");
+app.Urls.Add($"http://0.0.0.0:{httpPort}");
 
 // Get the multi-port TCP service and start it
 var multiPortTcpService = app.Services.GetRequiredService<MultiPortTcpService>();
