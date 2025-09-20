@@ -1,3 +1,10 @@
+/* CSS Reset for consistent rendering across browsers */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background-color: transparent; /* Transparent for overlay */
   color: #000;
@@ -55,10 +62,11 @@ body {
   font-weight: bold;
   color: #000;
   text-align: center;
-  min-width: 400px;
+  width: 420px; /* Match racer block width exactly */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   margin-bottom: 4px;
+  box-sizing: border-box; /* Ensure padding and border are included in width */
   /* Position will be set dynamically by JavaScript */
 }
 
@@ -83,9 +91,10 @@ body {
   border: 2px solid #000;
   border-radius: 6px;
   padding: 8px 12px;
-  min-width: 400px;
+  width: 420px; /* Changed from min-width to exact width */
   position: relative;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box; /* Ensure padding and border are included in width */
 }
 
       /* Lane color indicator */
