@@ -126,6 +126,10 @@ public class Racer
     {
         if (skipDelay)
         {
+            if (_lapsRemaining == newValue)
+            {
+                return;
+            }
             // Direct update without delay - set both current and delayed to the same value
             _lapsRemaining = newValue;
             _delayedLapsRemaining = newValue;
