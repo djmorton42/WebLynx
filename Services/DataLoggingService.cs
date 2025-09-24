@@ -5,11 +5,16 @@ using WebLynx.Models;
 
 namespace WebLynx.Services;
 
-public class DataLoggingService
+public class DataLoggingService : IDisposable
 {
     private readonly ILogger<DataLoggingService> _logger;
     private readonly string _logFilePath;
     private readonly LoggingSettings _loggingSettings;
+    private readonly SemaphoreSlim _fileSemaphore = new(1, 1);
+    private readonly TimeSpan _semaphoreTimeout = TimeSpan.FromSeconds(5);
+    private volatile bool _loggingDisabled = false;
+    private int _consecutiveFailures = 0;
+    private const int MaxConsecutiveFailures = 5;
 
     public DataLoggingService(ILogger<DataLoggingService> logger, IOptions<LoggingSettings> loggingSettings)
     {
@@ -29,11 +34,34 @@ public class DataLoggingService
         }
     }
 
-    public async Task LogDataAsync(byte[] data, string clientInfo)
+    public void LogDataAsync(byte[] data, string clientInfo)
     {
-        // Check if data logging is enabled
-        if (!_loggingSettings.EnableDataLogging)
+        // Check if data logging is enabled or if we've disabled it due to failures
+        if (!_loggingSettings.EnableDataLogging || _loggingDisabled)
         {
+            return;
+        }
+
+        // Fire and forget - don't await this to prevent blocking the main application
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LogDataInternalAsync(data, clientInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in background logging for {ClientInfo}", clientInfo);
+            }
+        });
+    }
+
+    private async Task LogDataInternalAsync(byte[] data, string clientInfo)
+    {
+        // Try to acquire semaphore with timeout
+        if (!await _fileSemaphore.WaitAsync(_semaphoreTimeout))
+        {
+            _logger.LogWarning("Timeout waiting for file access, skipping log entry for {ClientInfo}", clientInfo);
             return;
         }
 
@@ -88,13 +116,28 @@ public class DataLoggingService
             logEntry.AppendLine("=== End of data ===");
             logEntry.AppendLine();
             
-            await File.AppendAllTextAsync(_logFilePath, logEntry.ToString());
+            await WriteToFileWithRetryAsync(logEntry.ToString());
+            
+            // Reset failure counter on success
+            Interlocked.Exchange(ref _consecutiveFailures, 0);
             
             //_logger.LogInformation("Logged {Length} bytes from {ClientInfo}", data.Length, clientInfo);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error logging data from {ClientInfo}", clientInfo);
+            var failures = Interlocked.Increment(ref _consecutiveFailures);
+            _logger.LogError(ex, "Error logging data from {ClientInfo} (failure #{Failures})", clientInfo, failures);
+            
+            // Disable logging if we have too many consecutive failures
+            if (failures >= MaxConsecutiveFailures)
+            {
+                _loggingDisabled = true;
+                _logger.LogError("Data logging disabled due to {Failures} consecutive failures", failures);
+            }
+        }
+        finally
+        {
+            _fileSemaphore.Release();
         }
     }
 
@@ -132,8 +175,37 @@ public class DataLoggingService
         }
     }
 
-    public async Task LogStartListSummaryAsync(RaceEvent eventData, List<Racer> racers, string clientInfo)
+    public void LogStartListSummaryAsync(RaceEvent eventData, List<Racer> racers, string clientInfo)
     {
+        // Check if data logging is enabled or if we've disabled it due to failures
+        if (!_loggingSettings.EnableDataLogging || _loggingDisabled)
+        {
+            return;
+        }
+
+        // Fire and forget - don't await this to prevent blocking the main application
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LogStartListSummaryInternalAsync(eventData, racers, clientInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in background StartList logging for {ClientInfo}", clientInfo);
+            }
+        });
+    }
+
+    private async Task LogStartListSummaryInternalAsync(RaceEvent eventData, List<Racer> racers, string clientInfo)
+    {
+        // Try to acquire semaphore with timeout
+        if (!await _fileSemaphore.WaitAsync(_semaphoreTimeout))
+        {
+            _logger.LogWarning("Timeout waiting for file access, skipping StartList log entry for {ClientInfo}", clientInfo);
+            return;
+        }
+
         try
         {
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
@@ -167,13 +239,68 @@ public class DataLoggingService
             logEntry.AppendLine("=== End of StartList Summary ===");
             logEntry.AppendLine();
             
-            await File.AppendAllTextAsync(_logFilePath, logEntry.ToString());
+            await WriteToFileWithRetryAsync(logEntry.ToString());
+            
+            // Reset failure counter on success
+            Interlocked.Exchange(ref _consecutiveFailures, 0);
             
             _logger.LogInformation("Logged StartList summary with {Count} racers from {ClientInfo}", racers.Count, clientInfo);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error logging StartList summary from {ClientInfo}", clientInfo);
+            var failures = Interlocked.Increment(ref _consecutiveFailures);
+            _logger.LogError(ex, "Error logging StartList summary from {ClientInfo} (failure #{Failures})", clientInfo, failures);
+            
+            // Disable logging if we have too many consecutive failures
+            if (failures >= MaxConsecutiveFailures)
+            {
+                _loggingDisabled = true;
+                _logger.LogError("Data logging disabled due to {Failures} consecutive failures", failures);
+            }
         }
+        finally
+        {
+            _fileSemaphore.Release();
+        }
+    }
+
+    private async Task WriteToFileWithRetryAsync(string content)
+    {
+        const int maxRetries = 3;
+        const int baseDelayMs = 100;
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                await File.AppendAllTextAsync(_logFilePath, content);
+                return; // Success, exit the retry loop
+            }
+            catch (IOException ex) when (attempt < maxRetries - 1)
+            {
+                // Check if it's a file locking issue
+                if (ex.Message.Contains("being used by another process") || 
+                    ex.Message.Contains("The process cannot access the file"))
+                {
+                    var delay = baseDelayMs * (int)Math.Pow(2, attempt); // Exponential backoff
+                    _logger.LogWarning("File access failed (attempt {Attempt}/{MaxRetries}), retrying in {Delay}ms: {Message}", 
+                        attempt + 1, maxRetries, delay, ex.Message);
+                    await Task.Delay(delay);
+                }
+                else
+                {
+                    // Not a file locking issue, rethrow immediately
+                    throw;
+                }
+            }
+        }
+
+        // If we get here, all retries failed
+        throw new IOException($"Failed to write to log file after {maxRetries} attempts: {_logFilePath}");
+    }
+
+    public void Dispose()
+    {
+        _fileSemaphore?.Dispose();
     }
 }

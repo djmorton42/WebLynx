@@ -28,12 +28,12 @@ public class RaceStateManager
         _lapCounterSettings = lapCounterSettings.Value;
     }
 
-    public async Task ProcessMessageAsync(byte[] data, string clientInfo)
+    public void ProcessMessageAsync(byte[] data, string clientInfo)
     {
         try
         {
             // Log the raw data
-            await _dataLoggingService.LogDataAsync(data, clientInfo);
+            _dataLoggingService.LogDataAsync(data, clientInfo);
 
             // Decode the message
             var text = DecodeMessage(data);
@@ -65,7 +65,7 @@ public class RaceStateManager
                         break;
                     case MessageType.StartListHeader:
                         // StartListHeader clears all existing state and loads new race
-                        await ProcessStartListHeaderMessage(completeText);
+                        ProcessStartListHeaderMessage(completeText);
                         break;
                     case MessageType.StartedHeader:
                         ProcessStartedHeaderMessage(completeText);
@@ -116,7 +116,7 @@ public class RaceStateManager
         }
     }
 
-    private async Task ProcessStartListHeaderMessage(string text)
+    private void ProcessStartListHeaderMessage(string text)
     {
         // StartListHeader indicates a new race has been loaded - clear existing state
         _logger.LogInformation("StartListHeader received - clearing existing race state and loading new race");
@@ -154,7 +154,7 @@ public class RaceStateManager
         // Log a summary of the complete StartList data
         if (eventData != null)
         {
-            await _dataLoggingService.LogStartListSummaryAsync(eventData, racers, "StartList Complete");
+            _dataLoggingService.LogStartListSummaryAsync(eventData, racers, "StartList Complete");
             
             // Also output a visual summary to console
             Console.WriteLine("\n" + new string('=', 60));

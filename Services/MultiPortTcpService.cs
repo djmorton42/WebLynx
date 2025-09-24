@@ -139,7 +139,7 @@ public class MultiPortTcpService : IDisposable
                     _diagnosticService.AnalyzeData(data, $"{client.Client.RemoteEndPoint} ({connectionType})");
                     
                     // Process the message through the race state manager
-                    await _raceStateManager.ProcessMessageAsync(data, $"{client.Client.RemoteEndPoint} ({connectionType})");
+                    _raceStateManager.ProcessMessageAsync(data, $"{client.Client.RemoteEndPoint} ({connectionType})");
                 }
             }
         }

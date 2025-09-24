@@ -190,10 +190,7 @@ public class ViewsController : Controller
     public IActionResult TestRaceUpdate()
     {
         // Manually trigger the race update event by processing a test message
-        _ = Task.Run(async () =>
-        {
-            await _raceStateManager.ProcessMessageAsync(new byte[0], "Test Update");
-        });
+        _raceStateManager.ProcessMessageAsync(new byte[0], "Test Update");
         
         return Ok("Test race update triggered");
     }

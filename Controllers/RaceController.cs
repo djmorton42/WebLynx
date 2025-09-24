@@ -155,13 +155,13 @@ public class RaceController : ControllerBase
     }
 
     [HttpPost("test-announcement")]
-    public async Task<IActionResult> TestAnnouncement([FromBody] TestAnnouncementRequest request)
+    public IActionResult TestAnnouncement([FromBody] TestAnnouncementRequest request)
     {
         try
         {
             // Convert the message to UTF-16 bytes (like the real system would send)
             var messageBytes = System.Text.Encoding.Unicode.GetBytes(request.Message);
-            await _raceStateManager.ProcessMessageAsync(messageBytes, "Test Announcement");
+            _raceStateManager.ProcessMessageAsync(messageBytes, "Test Announcement");
             
             return Ok("Test announcement processed");
         }
