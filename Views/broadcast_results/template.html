@@ -90,6 +90,17 @@
         return LANE_COLORS[lane] || '#333333';
       }
       
+      function isAlphaCode(placeText) {
+        // Check if the place text is an alpha code (DNF, DNS, DSQ, etc.)
+        // rather than a numeric position
+        if (!placeText || placeText.trim() === '') {
+          return false;
+        }
+        
+        // Try to parse as integer - if it fails, it's likely an alpha code
+        return isNaN(parseInt(placeText.trim()));
+      }
+      
       function createResultRow(racer, hasPlaces) {
         const template = document.getElementById('result-template');
         const clone = template.content.cloneNode(true);
@@ -112,8 +123,11 @@
         resultRow.style.border = `2px solid ${laneColor}`;
         
         // Show/hide time box based on whether any racers have places
+        // and whether this specific racer has an alpha code (DNF, DNS, etc.)
         const timeElement = clone.querySelector('.final-time');
-        if (hasPlaces) {
+        const hasAlphaCode = racer.hasPlaceData && isAlphaCode(racer.placeText);
+        
+        if (hasPlaces && !hasAlphaCode) {
           // Show final time if available, otherwise show cumulative split time
           const timeToShow = racer.finalTime || racer.cumulativeSplitTime;
           timeElement.textContent = formatTime(timeToShow);
