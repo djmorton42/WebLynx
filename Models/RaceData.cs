@@ -40,6 +40,12 @@ public class PlaceData : IComparable<PlaceData>
         }
     }
 
+    public Boolean HasPlaceData {
+        get {
+            return _placeText != string.Empty;            
+        }
+    }
+
     public string PlaceText { get => _placeText; }
 
     public int CompareTo(PlaceData? other)
