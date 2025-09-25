@@ -31,7 +31,8 @@ public class MessageParserTests
 
         Assert.Equal("Some Club", racer.Affiliation);
         Assert.Equal("Some Racer", racer.Name);
-        Assert.Equal(1, racer.Place);
+        Assert.Equal("1", racer.Place.PlaceText);
+        Assert.True(racer.Place.HasPlaceData);
         Assert.Equal(3, racer.Lane);
         Assert.Equal(279, racer.Id);
         Assert.Equal(TimeSpan.FromSeconds(81).Add(TimeSpan.FromMilliseconds(404)), racer.FinalTime);
@@ -257,7 +258,8 @@ public class MessageParserTests
 
         // Assert
         Assert.NotNull(racer1);
-        Assert.Equal(1, racer1.Place);
+        Assert.Equal("1", racer1.Place.PlaceText);
+        Assert.True(racer1.Place.HasPlaceData);
         Assert.Equal(1, racer1.Lane);
         Assert.Null(racer1.ReactionTime); // ReactionTime is blank
         Assert.Equal(TimeSpan.FromSeconds(56.4), racer1.CumulativeSplitTime);
@@ -267,7 +269,8 @@ public class MessageParserTests
         Assert.Equal(11.280m, racer1.Pace);
         
         Assert.NotNull(racer2);
-        Assert.Equal(2, racer2.Place);
+        Assert.Equal("2", racer2.Place.PlaceText);
+        Assert.True(racer2.Place.HasPlaceData);
         Assert.Equal(2, racer2.Lane);
         Assert.Null(racer2.ReactionTime); // ReactionTime is blank
         Assert.Equal(TimeSpan.FromSeconds(58.2), racer2.CumulativeSplitTime);
@@ -287,22 +290,23 @@ public class MessageParserTests
         
         // Test minimal format (just lane and laps)
         // Position: 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-        // Line:    "          1                                       9"
-        string line = "          1                                       9";
+        // Line:    "    1                                       9"
+        string line = "    1                                       9";
 
         // Act
         var racer = parser.ParseRacerFromStartedLine(line);
 
         // Assert
         Assert.NotNull(racer);
-        Assert.Equal(0, racer.Place); // Default place for minimal format
+        Assert.Equal("", racer.Place.PlaceText); // Default place for minimal format
+        Assert.False(racer.Place.HasPlaceData);
         Assert.Equal(1, racer.Lane);
         Assert.Equal(9m, racer.LapsRemaining);
         Assert.Null(racer.ReactionTime);
         Assert.Null(racer.CumulativeSplitTime);
         Assert.Null(racer.LastSplitTime);
         Assert.Null(racer.BestSplitTime);
-        Assert.Null(racer.Speed);
-        Assert.Null(racer.Pace);
+        Assert.Equal(-1m, racer.Speed);
+        Assert.Equal(-1m, racer.Pace);
     }
 }

@@ -119,7 +119,7 @@ public class LiveRaceFileWriter : BackgroundService, IDisposable
 
                 // Sort racers by place (1st, 2nd, 3rd, etc.)
                 var sortedRacers = raceData.Racers
-                    .Where(r => r.Place > 0) // Only show racers with a place
+                    .Where(r => r.Place.HasPlaceData) // Only show racers with a place
                     .OrderBy(r => r.Place)
                     .ToList();
 
@@ -130,12 +130,12 @@ public class LiveRaceFileWriter : BackgroundService, IDisposable
                     var finalTime = racer.FinalTime?.ToString(@"mm\:ss\.fff") ?? "--:--.-";
                     var name = string.IsNullOrWhiteSpace(racer.Name) ? $"Racer {racer.Lane}" : racer.Name;
                     
-                    content.AppendLine($"{racer.Lane,4} | {racer.Place,5} | {lastSplit,10} | {finalTime,10} | {racer.LapsRemaining,14} | {name}");
+                    content.AppendLine($"{racer.Lane,4} | {racer.Place.PlaceText,5} | {lastSplit,10} | {finalTime,10} | {racer.LapsRemaining,14} | {name}");
                 }
 
                 // Add racers without places (not yet started or no place assigned)
                 var unplacedRacers = raceData.Racers
-                    .Where(r => r.Place <= 0)
+                    .Where(r => !r.Place.HasPlaceData)
                     .OrderBy(r => r.Lane)
                     .ToList();
 

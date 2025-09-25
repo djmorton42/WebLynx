@@ -96,8 +96,8 @@
         
         // Populate the cloned template
         const positionElement = clone.querySelector('.position');
-        if (racer.place > 0) {
-          positionElement.textContent = racer.place;
+        if (racer.hasPlaceData) {
+          positionElement.textContent = racer.placeText;
         } else {
           positionElement.textContent = `Lane ${racer.lane}`;
         }
@@ -152,21 +152,9 @@
             const resultsContainer = document.getElementById('results-container');
             resultsContainer.innerHTML = '';
             
-            // Display all racers, sorted by placement first, then by lane
+            // Display all racers (already sorted by server)
             const allRacers = data.racers.filter(racer => racer.lane > 0);
-            
-            // Sort by place (1st, 2nd, 3rd, etc.), then by lane if no place
-            const sortedRacers = allRacers.sort((a, b) => {
-              // If both have places, sort by place
-              if (a.place > 0 && b.place > 0) {
-                return a.place - b.place;
-              }
-              // If only one has a place, that one comes first
-              if (a.place > 0 && b.place <= 0) return -1;
-              if (b.place > 0 && a.place <= 0) return 1;
-              // If neither has a place, sort by lane
-              return a.lane - b.lane;
-            });
+            const sortedRacers = allRacers; // Server already sorts correctly
             
             // Apply dynamic sizing class based on number of racers
             resultsContainer.className = 'results-container';
@@ -175,7 +163,7 @@
             }
             
             // Check if any racers have places set
-            const hasPlaces = sortedRacers.some(racer => racer.place > 0);
+            const hasPlaces = sortedRacers.some(racer => racer.hasPlaceData);
             
             // Show/hide unofficial results indicator based on whether places are set
             const unofficialIndicator = document.querySelector('.unofficial-indicator');

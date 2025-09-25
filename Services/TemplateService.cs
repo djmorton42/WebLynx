@@ -136,9 +136,9 @@ public class TemplateService
     {
         return sortBy.ToLower() switch
         {
-            "place" => racers.OrderBy(r => r.Place > 0 ? r.Place : int.MaxValue).ThenBy(r => r.Lane).ToList(),
+            "place" => racers.OrderBy(r => r.Place).ThenBy(r => r.Lane).ToList(),
             "lane" => racers.OrderBy(r => r.Lane).ToList(),
-            _ => racers.OrderBy(r => r.Place > 0 ? r.Place : int.MaxValue).ThenBy(r => r.Lane).ToList()
+            _ => racers.OrderBy(r => r.Place).ThenBy(r => r.Lane).ToList()
         };
     }
 

@@ -495,7 +495,8 @@ public class MessageParser
 // 2   2            58.2     13.5     11.8     13 1/2        12.450
 
                         
-            var place = FixedWidthParser.TrimParse(line, 0, 3, int.Parse);
+            var placeText = FixedWidthParser.TrimParse(line, 0, 3, string.Empty);
+            var place = new PlaceData(placeText);
             var lane = FixedWidthParser.TrimParse(line, 4, 3, int.Parse);
             var reactionTime = FixedWidthParser.TrimParse(line, 8, 8, TimeSpanParser.Parse);
             var cumulativeSplitTime = FixedWidthParser.TrimParse(line, 17, 8, TimeSpanParser.Parse);
@@ -540,8 +541,9 @@ public class MessageParser
 
             if (line.Length >= 60) // Minimum length check
             {
-                var place = FixedWidthParser.TrimParse(line, 0, 3, int.Parse, 0);
-                if (place == 0)
+                var placeText = FixedWidthParser.TrimParse(line, 0, 3, string.Empty);
+                var placeData = new PlaceData(placeText);
+                if (!placeData.HasPlaceData)
                 {
                     return null; // Skip lines without place (unfinished racers)
                 }
@@ -572,7 +574,7 @@ public class MessageParser
 
                 return new Racer
                 {
-                    Place = place,
+                    Place = placeData,
                     Lane = lane,
                     Id = id,
                     Name = name ?? string.Empty,
@@ -640,7 +642,7 @@ public class MessageParser
     {
         // Check if ALL racers have no split/place data but do have lap counts
         return racers.All(r => 
-            r.Place == 0 && 
+            !r.Place.HasPlaceData && 
             r.ReactionTime == null && 
             r.CumulativeSplitTime == null && 
             r.LastSplitTime == null && 

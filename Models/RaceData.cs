@@ -68,17 +68,17 @@ public class PlaceData : IComparable<PlaceData>
 
     private int GetSortPriority(string placeText)
     {
-        // Priority 1: Parsable integers > 0
+        // Priority 1: Parsable integers > 0 (at the top)
         if (int.TryParse(placeText, out int value) && value > 0)
         {
             return 1;
         }
-        // Priority 2: Empty strings
+        // Priority 2: Empty strings (no place data - sorted by lane)
         else if (string.IsNullOrEmpty(placeText))
         {
             return 2;
         }
-        // Priority 3: Non-empty non-numeric strings
+        // Priority 3: Non-empty non-numeric strings (DNF, DNS, etc. - at the end)
         else
         {
             return 3;
@@ -116,7 +116,7 @@ public class Racer
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Affiliation { get; set; } = string.Empty;
-    public int Place { get; set; }
+    public PlaceData Place { get; set; } = new PlaceData();
     public TimeSpan? ReactionTime { get; set; }
     public TimeSpan? CumulativeSplitTime { get; set; }
     public TimeSpan? LastSplitTime { get; set; }
@@ -225,7 +225,7 @@ public class Racer
 
     public override string ToString()
     {
-        return $"Racer: Lane={Lane}, Id={Id}, Name='{Name}', Affiliation='{Affiliation}', Place={Place}, " +
+        return $"Racer: Lane={Lane}, Id={Id}, Name='{Name}', Affiliation='{Affiliation}', Place={Place.PlaceText}, " +
                $"ReactionTime={ReactionTime}, CumulativeSplitTime={CumulativeSplitTime}, LastSplitTime={LastSplitTime}, " +
                $"BestSplitTime={BestSplitTime}, LapsRemaining={LapsRemaining}, Speed={Speed}, Pace={Pace}, " +
                $"FinalTime={FinalTime}, DeltaTime={DeltaTime}, HasFinished={HasFinished}";
@@ -273,7 +273,8 @@ public class RacerApiResponse
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Affiliation { get; set; } = string.Empty;
-    public int Place { get; set; }
+    public string PlaceText { get; set; } = string.Empty;
+    public bool HasPlaceData { get; set; }
     public TimeSpan? ReactionTime { get; set; }
     public TimeSpan? CumulativeSplitTime { get; set; }
     public TimeSpan? LastSplitTime { get; set; }
