@@ -25,6 +25,81 @@ public class RaceEvent
     public int NumberOfResults { get; set; }
 }
 
+public class PlaceData : IComparable<PlaceData>
+{
+    private readonly string _placeText;
+
+    public PlaceData() {
+        _placeText = string.Empty;
+    }
+    public PlaceData(string? placeText) {
+        if (placeText == null) {
+            _placeText = string.Empty;
+        } else {
+            _placeText = placeText.Trim();
+        }
+    }
+
+    public string PlaceText { get => _placeText; }
+
+    public int CompareTo(PlaceData? other)
+    {
+        if (other == null) return 1;
+
+        // Get the sort priority for this object
+        var thisPriority = GetSortPriority(_placeText);
+        var otherPriority = GetSortPriority(other._placeText);
+
+        // If priorities are different, sort by priority
+        if (thisPriority != otherPriority)
+        {
+            return thisPriority.CompareTo(otherPriority);
+        }
+
+        // Within the same priority group, sort by the actual values
+        return CompareWithinPriority(_placeText, other._placeText, thisPriority);
+    }
+
+    private int GetSortPriority(string placeText)
+    {
+        // Priority 1: Parsable integers > 0
+        if (int.TryParse(placeText, out int value) && value > 0)
+        {
+            return 1;
+        }
+        // Priority 2: Empty strings
+        else if (string.IsNullOrEmpty(placeText))
+        {
+            return 2;
+        }
+        // Priority 3: Non-empty non-numeric strings
+        else
+        {
+            return 3;
+        }
+    }
+
+    private int CompareWithinPriority(string thisText, string otherText, int priority)
+    {
+        switch (priority)
+        {
+            case 1: // Both are parsable integers > 0
+                int thisValue = int.Parse(thisText);
+                int otherValue = int.Parse(otherText);
+                return thisValue.CompareTo(otherValue);
+
+            case 2: // Both are empty strings
+                return 0; // All empty strings are equal
+
+            case 3: // Both are non-empty non-numeric strings
+                return string.Compare(thisText, otherText, StringComparison.Ordinal);
+
+            default:
+                return 0;
+        }
+    }
+}
+
 public class Racer
 {
     private decimal _lapsRemaining;
