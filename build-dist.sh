@@ -9,7 +9,7 @@ echo "Building WebLynx Windows Distribution..."
 
 # Clean previous builds
 echo "Cleaning previous builds..."
-rm -rf bin/ publish/ WebLynx-windows-x64.zip
+rm -rf bin/ publish/ WebLynx-win*-x64.zip
 
 # Build for Windows
 echo "Building for Windows (x64)..."
@@ -128,7 +128,7 @@ EOF
 # Create the distribution zip file
 echo "Creating distribution package..."
 cd "$DIST_DIR"
-zip -r ../WebLynx-windows-x64.zip . -x "*.DS_Store" "Thumbs.db"
+zip -r ../WebLynx-win-x64.zip . -x "*.DS_Store" "Thumbs.db"
 cd ..
 
 # Clean up temporary directory
@@ -136,7 +136,7 @@ rm -rf "$DIST_DIR"
 
 echo ""
 echo "Windows distribution build complete!"
-echo "Distribution package created: WebLynx-windows-x64.zip"
+echo "Distribution package created: WebLynx-win-x64.zip"
 echo ""
 echo "The package includes:"
 echo "  - WebLynx.exe (main application)"
@@ -148,5 +148,5 @@ echo "  - run-weblynx.ps1 (PowerShell launcher)"
 echo "  - Views/ (web interface templates and assets)"
 echo ""
 echo "To distribute:"
-echo "  1. Share the WebLynx-windows-x64.zip file"
+echo "  1. Share the WebLynx-win-x64.zip file"
 echo "  2. Recipients can extract and run run-weblynx.bat"
