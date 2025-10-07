@@ -89,29 +89,6 @@ Log files are created in the `log/` directory:
 
 EOF
 
-    # Create platform-specific launcher scripts
-    if [ "$platform" = "win-x64" ]; then
-        # Windows batch file
-        cat > "$DIST_DIR/run-weblynx.bat" << 'EOF'
-@echo off
-echo Starting WebLynx...
-WebLynx.exe
-pause
-EOF
-        # Windows PowerShell script
-        cat > "$DIST_DIR/run-weblynx.ps1" << 'EOF'
-Write-Host "Starting WebLynx..." -ForegroundColor Green
-.\WebLynx.exe
-EOF
-    else
-        # macOS shell script
-        cat > "$DIST_DIR/run-weblynx.sh" << 'EOF'
-#!/bin/bash
-echo "Starting WebLynx..."
-./WebLynx
-EOF
-        chmod +x "$DIST_DIR/run-weblynx.sh"
-    fi
 
     # Create the distribution zip file
     echo "Creating $platform distribution package..."
@@ -140,9 +117,8 @@ echo "  - Main application executable"
 echo "  - appsettings.json (configuration)"
 echo "  - README.md (documentation)"
 echo "  - CONFIGURATION.md (configuration guide)"
-echo "  - Platform-specific launcher script"
 echo "  - Views/ (web interface templates and assets)"
 echo ""
 echo "To distribute:"
 echo "  1. Share the appropriate zip file for the target platform"
-echo "  2. Recipients can extract and run the launcher script"
+echo "  2. Recipients can extract and run the executable directly"
