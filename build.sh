@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # WebLynx Build Script
-# This script builds the application for both macOS and Windows
+# This script performs a clean build of the application
 
 set -e
 
@@ -19,20 +19,7 @@ dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=
 echo "Building for Windows..."
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64/
 
-# Create distribution packages
-echo "Creating distribution packages..."
-
-# macOS package
-cd publish/osx-x64/
-zip -r ../../WebLynx-macos-x64.zip WebLynx appsettings.json
-cd ../..
-
-# Windows package
-cd publish/win-x64/
-zip -r ../../WebLynx-windows-x64.zip WebLynx.exe appsettings.json
-cd ../..
-
 echo "Build complete!"
-echo "Distribution packages created:"
-echo "  - WebLynx-macos-x64.zip"
-echo "  - WebLynx-windows-x64.zip"
+echo "Built applications available in:"
+echo "  - publish/osx-x64/WebLynx"
+echo "  - publish/win-x64/WebLynx.exe"

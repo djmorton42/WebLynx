@@ -65,13 +65,15 @@ jobs:
           chmod +x build-dist.sh
           ./build-dist.sh
 
-      - name: Rename zip file with version
+      - name: Rename zip files with version
         run: |
           VERSION_WITHOUT_V=${{ steps.bump.outputs.version }}
           VERSION_WITHOUT_V=${VERSION_WITHOUT_V#v}
           mv WebLynx-win-x64.zip "WebLynx-v${VERSION_WITHOUT_V}-win-x64.zip"
-          echo "zip_name=WebLynx-v${VERSION_WITHOUT_V}-win-x64.zip" >> $GITHUB_OUTPUT
-        id: rename_zip
+          mv WebLynx-macos-x64.zip "WebLynx-v${VERSION_WITHOUT_V}-macos-x64.zip"
+          echo "win_zip_name=WebLynx-v${VERSION_WITHOUT_V}-win-x64.zip" >> $GITHUB_OUTPUT
+          echo "macos_zip_name=WebLynx-v${VERSION_WITHOUT_V}-macos-x64.zip" >> $GITHUB_OUTPUT
+        id: rename_zips
 
       - name: Create new tag
         run: |
@@ -85,6 +87,8 @@ jobs:
         with:
           tag_name: ${{ steps.bump.outputs.version }}
           name: Release ${{ steps.bump.outputs.version }}
-          files: ${{ steps.rename_zip.outputs.zip_name }}
+          files: |
+            ${{ steps.rename_zips.outputs.win_zip_name }}
+            ${{ steps.rename_zips.outputs.macos_zip_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

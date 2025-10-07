@@ -49,15 +49,27 @@ The application uses `appsettings.json` for configuration:
 
 ## Building
 
-Use the provided build script to create distribution packages:
+### Development Build
+
+For development builds, use the clean build script:
 
 ```bash
 ./build.sh
 ```
 
+This will build the application for both platforms without creating distributables.
+
+### Distribution Build
+
+To create distributable packages:
+
+```bash
+./build-dist.sh
+```
+
 This will create:
-- `WebLynx-macos-x64.zip` - macOS executable
-- `WebLynx-windows-x64.zip` - Windows executable
+- `WebLynx-macos-x64.zip` - macOS distributable package
+- `WebLynx-win-x64.zip` - Windows distributable package
 
 ## Running
 

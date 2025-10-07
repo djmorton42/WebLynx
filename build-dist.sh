@@ -1,45 +1,54 @@
 #!/bin/bash
 
-# WebLynx Windows Distribution Build Script
-# This script creates a complete Windows distributable package
+# WebLynx Distribution Build Script
+# This script creates complete distributable packages for Windows and macOS
 
 set -e
 
-echo "Building WebLynx Windows Distribution..."
+echo "Building WebLynx Distributions..."
 
 # Clean previous builds
 echo "Cleaning previous builds..."
-rm -rf bin/ publish/ WebLynx-win*-x64.zip
+rm -rf bin/ publish/ WebLynx-*-x64.zip
 
 # Build for Windows
 echo "Building for Windows (x64)..."
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64/
 
-# Create distribution directory structure
-echo "Creating distribution structure..."
-DIST_DIR="WebLynx-windows-dist"
-rm -rf "$DIST_DIR"
-mkdir -p "$DIST_DIR"
+# Build for macOS
+echo "Building for macOS (x64)..."
+dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/osx-x64/
 
-# Copy main executable and configuration
-echo "Copying main application files..."
-cp publish/win-x64/WebLynx.exe "$DIST_DIR/"
-cp appsettings.json "$DIST_DIR/"
+# Function to create distribution package
+create_distribution() {
+    local platform=$1
+    local executable_name=$2
+    local dist_name=$3
+    
+    echo "Creating $platform distribution structure..."
+    DIST_DIR="WebLynx-$platform-dist"
+    rm -rf "$DIST_DIR"
+    mkdir -p "$DIST_DIR"
 
-# Copy documentation
-echo "Copying documentation..."
-cp README.md "$DIST_DIR/"
+    # Copy main executable and configuration
+    echo "Copying main application files..."
+    cp "publish/$platform/$executable_name" "$DIST_DIR/"
+    cp appsettings.json "$DIST_DIR/"
 
-# Copy Views directory (web interface templates and assets)
-echo "Copying Views directory..."
-cp -r Views "$DIST_DIR/"
+    # Copy documentation
+    echo "Copying documentation..."
+    cp README.md "$DIST_DIR/"
 
-# Note: etc directory contains example files and is not needed for distribution
-# Note: log directory will be created by the application at runtime if needed
+    # Copy Views directory (web interface templates and assets)
+    echo "Copying Views directory..."
+    cp -r Views "$DIST_DIR/"
 
-# Create a configuration guide
-echo "Creating configuration guide..."
-cat > "$DIST_DIR/CONFIGURATION.md" << 'EOF'
+    # Note: etc directory contains example files and is not needed for distribution
+    # Note: log directory will be created by the application at runtime if needed
+
+    # Create a configuration guide
+    echo "Creating configuration guide..."
+    cat > "$DIST_DIR/CONFIGURATION.md" << 'EOF'
 # WebLynx Configuration Guide
 
 ## Quick Start
@@ -80,28 +89,60 @@ Log files are created in the `log/` directory:
 
 EOF
 
-# Create the distribution zip file
-echo "Creating distribution package..."
-cd "$DIST_DIR"
-zip -r ../WebLynx-win-x64.zip . -x "*.DS_Store" "Thumbs.db"
-cd ..
+    # Create platform-specific launcher scripts
+    if [ "$platform" = "win-x64" ]; then
+        # Windows batch file
+        cat > "$DIST_DIR/run-weblynx.bat" << 'EOF'
+@echo off
+echo Starting WebLynx...
+WebLynx.exe
+pause
+EOF
+        # Windows PowerShell script
+        cat > "$DIST_DIR/run-weblynx.ps1" << 'EOF'
+Write-Host "Starting WebLynx..." -ForegroundColor Green
+.\WebLynx.exe
+EOF
+    else
+        # macOS shell script
+        cat > "$DIST_DIR/run-weblynx.sh" << 'EOF'
+#!/bin/bash
+echo "Starting WebLynx..."
+./WebLynx
+EOF
+        chmod +x "$DIST_DIR/run-weblynx.sh"
+    fi
 
-# Clean up temporary directory
-rm -rf "$DIST_DIR"
+    # Create the distribution zip file
+    echo "Creating $platform distribution package..."
+    cd "$DIST_DIR"
+    zip -r "../$dist_name" . -x "*.DS_Store" "Thumbs.db"
+    cd ..
+
+    # Clean up temporary directory
+    rm -rf "$DIST_DIR"
+}
+
+# Create Windows distribution
+create_distribution "win-x64" "WebLynx.exe" "WebLynx-win-x64.zip"
+
+# Create macOS distribution
+create_distribution "osx-x64" "WebLynx" "WebLynx-macos-x64.zip"
 
 echo ""
-echo "Windows distribution build complete!"
-echo "Distribution package created: WebLynx-win-x64.zip"
+echo "Distribution build complete!"
+echo "Distribution packages created:"
+echo "  - WebLynx-win-x64.zip (Windows)"
+echo "  - WebLynx-macos-x64.zip (macOS)"
 echo ""
-echo "The package includes:"
-echo "  - WebLynx.exe (main application)"
+echo "Each package includes:"
+echo "  - Main application executable"
 echo "  - appsettings.json (configuration)"
 echo "  - README.md (documentation)"
 echo "  - CONFIGURATION.md (configuration guide)"
-echo "  - run-weblynx.bat (easy launcher)"
-echo "  - run-weblynx.ps1 (PowerShell launcher)"
+echo "  - Platform-specific launcher script"
 echo "  - Views/ (web interface templates and assets)"
 echo ""
 echo "To distribute:"
-echo "  1. Share the WebLynx-win-x64.zip file"
-echo "  2. Recipients can extract and run run-weblynx.bat"
+echo "  1. Share the appropriate zip file for the target platform"
+echo "  2. Recipients can extract and run the launcher script"
