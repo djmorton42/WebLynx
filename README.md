@@ -80,7 +80,7 @@ Received data is logged to `log/received_data.YYYY-MM-DD.log` with:
 To run in development mode:
 
 ```bash
-dotnet run
+./run.sh
 ```
 
 ## Requirements
