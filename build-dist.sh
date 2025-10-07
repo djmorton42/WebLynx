@@ -37,41 +37,6 @@ cp -r Views "$DIST_DIR/"
 # Note: etc directory contains example files and is not needed for distribution
 # Note: log directory will be created by the application at runtime if needed
 
-# Create a Windows batch file for easy execution
-echo "Creating Windows batch file..."
-cat > "$DIST_DIR/run-weblynx.bat" << 'EOF'
-@echo off
-echo Starting WebLynx...
-echo.
-echo WebLynx will start the web interface on port 5001
-echo Open your browser to http://localhost:5001 to access the interface
-echo.
-echo Press Ctrl+C to stop the application
-echo.
-WebLynx.exe
-pause
-EOF
-
-# Create a Windows PowerShell script for advanced users
-echo "Creating PowerShell script..."
-cat > "$DIST_DIR/run-weblynx.ps1" << 'EOF'
-# WebLynx PowerShell Launcher
-Write-Host "Starting WebLynx..." -ForegroundColor Green
-Write-Host ""
-Write-Host "WebLynx will start the web interface on port 5001" -ForegroundColor Yellow
-Write-Host "Open your browser to http://localhost:5001 to access the interface" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "Press Ctrl+C to stop the application" -ForegroundColor Cyan
-Write-Host ""
-
-try {
-    & .\WebLynx.exe
-} catch {
-    Write-Host "Error running WebLynx: $_" -ForegroundColor Red
-    Read-Host "Press Enter to exit"
-}
-EOF
-
 # Create a configuration guide
 echo "Creating configuration guide..."
 cat > "$DIST_DIR/CONFIGURATION.md" << 'EOF'
@@ -79,13 +44,7 @@ cat > "$DIST_DIR/CONFIGURATION.md" << 'EOF'
 
 ## Quick Start
 
-1. Double-click `run-weblynx.bat` to start the application
-2. Open your browser to http://localhost:5001
-3. Configure FinishLynx to send data to port 8080 (timing) and 8081 (results)
-
-## Configuration
-
-Edit `appsettings.json` to customize the application:
+appsettings.json is used to configure the application.
 
 ### TCP Settings
 - `TimingPort`: Port for timing data from FinishLynx (default: 8080)
@@ -117,12 +76,8 @@ Log files are created in the `log/` directory:
 ## Troubleshooting
 
 - Ensure ports 8080, 8081, and 5001 are not blocked by firewall
-- Check log files for error messages
 - Verify FinishLynx is configured to send data to the correct ports
 
-## Support
-
-For issues or questions, refer to the README.md file or contact support.
 EOF
 
 # Create the distribution zip file
