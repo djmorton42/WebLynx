@@ -34,6 +34,12 @@ create_distribution() {
     echo "Copying main application files..."
     cp "publish/$platform/$executable_name" "$DIST_DIR/"
     cp appsettings.json "$DIST_DIR/"
+    
+    # Copy VERSION.txt if it exists
+    if [ -f "VERSION.txt" ]; then
+        echo "Copying VERSION.txt..."
+        cp VERSION.txt "$DIST_DIR/"
+    fi
 
     # Copy documentation
     echo "Copying documentation..."

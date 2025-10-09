@@ -4,6 +4,31 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using WebLynx.Services;
 
+// Check for VERSION.txt file and log startup message immediately
+var versionFilePath = Path.Combine(Directory.GetCurrentDirectory(), "VERSION.txt");
+string startupMessage = "Starting WebLynx";
+
+if (File.Exists(versionFilePath))
+{
+    try
+    {
+        var version = await File.ReadAllTextAsync(versionFilePath);
+        version = version.Trim();
+        if (!string.IsNullOrEmpty(version))
+        {
+            startupMessage = $"Starting WebLynx v{version}";
+        }
+    }
+    catch (Exception ex)
+    {
+        // If we can't read the version file, just use the default message
+        Console.WriteLine($"Warning: Could not read VERSION.txt: {ex.Message}");
+    }
+}
+
+// Log the startup message immediately as the first log output
+Console.WriteLine(startupMessage);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add configuration
