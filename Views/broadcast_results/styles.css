@@ -87,7 +87,7 @@ body {
   width: auto; /* Maintain aspect ratio */
   max-width: 200px; /* Reduced back to original max width */
   object-fit: contain;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.8)); /* Add shadow for visibility */
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); /* Match crisp styling */
 }
 
 /* Race Details Bar - Broadcast optimized */

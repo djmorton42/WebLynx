@@ -70,7 +70,7 @@ body {
 }
 
 .sso-logo {
-  height: 100px;
+  height: 120px;
   display: flex;
   align-items: center;
   background: #FFFFFF;
@@ -83,7 +83,7 @@ body {
 .sso-logo img {
   height: 100%;
   width: auto;
-  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* Main Content Area */
