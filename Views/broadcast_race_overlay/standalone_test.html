@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Broadcast Race Overlay - Test</title>
+    {{VIEW_PROPERTIES}}
     <style>
       /* CSS Reset for consistent rendering across browsers */
       * {
@@ -292,19 +293,7 @@
         }
       ];
       
-      // Lane color mapping
-      const LANE_COLORS = {
-        1: '#ffff00',  // Yellow
-        2: '#000000',  // Black
-        3: '#00ffff',  // Light Blue
-        4: '#ff0000',  // Red
-        5: '#ffffff',  // White
-        6: '#000080',  // Navy Blue
-        7: '#808080',  // Grey
-        8: '#ffc0cb',  // Pink
-        9: '#ffa500',  // Orange
-        10: '#008000'  // Green
-      };
+      // Lane colors now provided by VIEW_CONFIG
       
       function formatTime(timeSpanString) {
         if (!timeSpanString) return '00:00.000';
@@ -362,7 +351,7 @@
       }
       
       function getLaneColor(lane) {
-        return LANE_COLORS[lane] || '#333333';
+        return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
       }
       
       function formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {

@@ -1,5 +1,6 @@
 using WebLynx.Models;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace WebLynx.Services;
 
@@ -8,12 +9,14 @@ public class TemplateService
     private readonly ILogger<TemplateService> _logger;
     private readonly string _templatePath;
     private readonly BroadcastSettings _broadcastSettings;
+    private readonly ViewProperties _viewProperties;
 
-    public TemplateService(ILogger<TemplateService> logger, IOptions<BroadcastSettings> broadcastSettings)
+    public TemplateService(ILogger<TemplateService> logger, IOptions<BroadcastSettings> broadcastSettings, IOptions<ViewProperties> viewProperties)
     {
         _logger = logger;
         _templatePath = Path.Combine("Views", "in_race_livestream", "template.html");
         _broadcastSettings = broadcastSettings.Value;
+        _viewProperties = viewProperties.Value;
     }
 
     public string ProcessTemplate(RaceData raceData, string viewName)
@@ -48,7 +51,81 @@ public class TemplateService
         template = template.Replace("{{EVENT_SUBTITLE}}", _broadcastSettings.EventSubtitle);
         template = template.Replace("{{UNOFFICIAL_RESULTS_TEXT}}", _broadcastSettings.UnofficialResultsText);
         
+        // Inject view properties as JavaScript configuration
+        template = InjectViewProperties(template);
+        
         return template;
+    }
+
+    private string InjectViewProperties(string template)
+    {
+        try
+        {
+            // Create JavaScript configuration object from view properties
+            var laneColors = _viewProperties.GetDictionaryProperty<string>("LaneColors");
+            var laneStrokeColors = _viewProperties.GetDictionaryProperty<string>("LaneStrokeColors");
+            var updateInterval = _viewProperties.GetProperty<int>("UpdateInterval", 250);
+            var defaultLaneColor = _viewProperties.GetProperty<string>("DefaultLaneColor", "#333333");
+            var defaultStrokeColor = _viewProperties.GetProperty<string>("DefaultStrokeColor", "#ffffff");
+
+            // Convert dictionaries to JavaScript objects
+            var laneColorsJson = JsonSerializer.Serialize(laneColors);
+            var laneStrokeColorsJson = JsonSerializer.Serialize(laneStrokeColors);
+
+            // Create the JavaScript configuration
+            var viewConfigScript = $@"
+      <script>
+        // View Properties Configuration
+        const VIEW_CONFIG = {{
+          LANE_COLORS: {laneColorsJson},
+          LANE_STROKE_COLORS: {laneStrokeColorsJson},
+          UPDATE_INTERVAL: {updateInterval},
+          DEFAULT_LANE_COLOR: '{defaultLaneColor}',
+          DEFAULT_STROKE_COLOR: '{defaultStrokeColor}'
+        }};
+        
+        // Helper functions for backward compatibility
+        function getLaneColor(lane) {{
+          return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+        }}
+        
+        function getStrokeColor(lane) {{
+          return VIEW_CONFIG.LANE_STROKE_COLORS[lane] || VIEW_CONFIG.DEFAULT_STROKE_COLOR;
+        }}
+      </script>";
+
+            // Replace the placeholder or inject before the closing head tag
+            if (template.Contains("{{VIEW_PROPERTIES}}"))
+            {
+                template = template.Replace("{{VIEW_PROPERTIES}}", viewConfigScript);
+            }
+            else
+            {
+                // Inject before the closing head tag, or before the first script tag
+                var headCloseIndex = template.IndexOf("</head>");
+                if (headCloseIndex > 0)
+                {
+                    template = template.Insert(headCloseIndex, viewConfigScript);
+                }
+                else
+                {
+                    // If no head tag, inject at the beginning of the body
+                    var bodyOpenIndex = template.IndexOf("<body>");
+                    if (bodyOpenIndex > 0)
+                    {
+                        var bodyCloseIndex = template.IndexOf(">", bodyOpenIndex) + 1;
+                        template = template.Insert(bodyCloseIndex, viewConfigScript);
+                    }
+                }
+            }
+
+            return template;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error injecting view properties into template");
+            return template;
+        }
     }
 
     private string GenerateFallbackHtml(RaceData raceData, string viewName)

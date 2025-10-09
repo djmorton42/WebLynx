@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using WebLynx.Services;
+using WebLynx.Models;
 
 namespace WebLynx.Controllers;
 
@@ -11,13 +13,15 @@ public class ViewsController : Controller
     private readonly RaceStateManager _raceStateManager;
     private readonly TemplateService _templateService;
     private readonly ViewDiscoveryService _viewDiscoveryService;
+    private readonly ViewProperties _viewProperties;
 
-    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService, ViewDiscoveryService viewDiscoveryService)
+    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService, ViewDiscoveryService viewDiscoveryService, IOptions<ViewProperties> viewProperties)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
         _templateService = templateService;
         _viewDiscoveryService = viewDiscoveryService;
+        _viewProperties = viewProperties.Value;
     }
 
     [HttpGet("views/{viewName}")]
@@ -138,6 +142,40 @@ public class ViewsController : Controller
         _raceStateManager.ProcessMessageAsync(new byte[0], "Test Update");
         
         return Ok("Test race update triggered");
+    }
+
+    [HttpGet("api/view-properties")]
+    public IActionResult GetViewProperties()
+    {
+        try
+        {
+            return Ok(_viewProperties.Properties);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving view properties");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpGet("api/view-properties/{propertyName}")]
+    public IActionResult GetViewProperty(string propertyName)
+    {
+        try
+        {
+            if (!_viewProperties.HasProperty(propertyName))
+            {
+                return NotFound($"Property '{propertyName}' not found");
+            }
+
+            var value = _viewProperties.Properties[propertyName];
+            return Ok(new { property = propertyName, value = value });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving view property {PropertyName}", propertyName);
+            return StatusCode(500, "Internal server error");
+        }
     }
 }
 
