@@ -10,90 +10,35 @@ public class ViewsController : Controller
     private readonly ILogger<ViewsController> _logger;
     private readonly RaceStateManager _raceStateManager;
     private readonly TemplateService _templateService;
+    private readonly ViewDiscoveryService _viewDiscoveryService;
 
-    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService)
+    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService, ViewDiscoveryService viewDiscoveryService)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
         _templateService = templateService;
+        _viewDiscoveryService = viewDiscoveryService;
     }
 
-    [HttpGet("views/in_race_livestream")]
-    public IActionResult GetInRaceLivestream()
+    [HttpGet("views/{viewName}")]
+    public IActionResult GetView(string viewName)
     {
         try
         {
+            // Check if the view exists and is valid
+            if (!_viewDiscoveryService.IsValidView(viewName))
+            {
+                _logger.LogWarning("Requested view not found or invalid: {ViewName}", viewName);
+                return NotFound($"View '{viewName}' not found or invalid");
+            }
+
             var raceData = _raceStateManager.GetCurrentRaceState();
-            var html = _templateService.ProcessLivestreamTemplate(raceData);
+            var html = _templateService.ProcessTemplate(raceData, viewName);
             return Content(html, "text/html");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating livestream view");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    [HttpGet("views/lap_counter")]
-    public IActionResult GetLapCounter()
-    {
-        try
-        {
-            var raceData = _raceStateManager.GetCurrentRaceState();
-            var html = _templateService.ProcessLapCounterTemplate(raceData);
-            return Content(html, "text/html");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating lap counter view");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    [HttpGet("views/broadcast_results")]
-    public IActionResult GetBroadcastResults()
-    {
-        try
-        {
-            var raceData = _raceStateManager.GetCurrentRaceState();
-            var html = _templateService.ProcessBroadcastResultsTemplate(raceData);
-            return Content(html, "text/html");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating broadcast results view");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    [HttpGet("views/announcements")]
-    public IActionResult GetAnnouncements()
-    {
-        try
-        {
-            var raceData = _raceStateManager.GetCurrentRaceState();
-            var html = _templateService.ProcessAnnouncementsTemplate(raceData);
-            return Content(html, "text/html");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating announcements view");
-            return StatusCode(500, "Internal server error");
-        }
-    }
-
-    [HttpGet("views/broadcast_race_overlay")]
-    public IActionResult GetBroadcastRaceOverlay()
-    {
-        try
-        {
-            var raceData = _raceStateManager.GetCurrentRaceState();
-            var html = _templateService.ProcessBroadcastRaceOverlayTemplate(raceData);
-            return Content(html, "text/html");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating broadcast race overlay view");
+            _logger.LogError(ex, "Error generating view {ViewName}", viewName);
             return StatusCode(500, "Internal server error");
         }
     }
@@ -101,7 +46,20 @@ public class ViewsController : Controller
     [HttpGet("views")]
     public IActionResult GetViewsIndex()
     {
-        var html = @"
+        var discoveredViews = _viewDiscoveryService.DiscoveredViews.Where(v => v.IsValid).ToList();
+        
+        var viewsListHtml = string.Join("\n", discoveredViews.Select(view => {
+            var descriptionHtml = !string.IsNullOrEmpty(view.Description) 
+                ? $@"<div class=""description"">{view.Description}</div>" 
+                : "";
+            return $@"
+            <li>
+                <a href=""/views/{view.Name}"">{view.DisplayName}</a>
+                {descriptionHtml}
+            </li>";
+        }));
+
+        var html = $@"
 <!DOCTYPE html>
 <html lang=""en"">
 <head>
@@ -109,32 +67,32 @@ public class ViewsController : Controller
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
     <title>WebLynx Views</title>
     <style>
-        body {
+        body {{
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
-        }
-        .container {
+        }}
+        .container {{
             background-color: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
+        }}
+        h1 {{
             color: #333;
             text-align: center;
             margin-bottom: 30px;
-        }
-        .views-list {
+        }}
+        .views-list {{
             list-style: none;
             padding: 0;
-        }
-        .views-list li {
+        }}
+        .views-list li {{
             margin: 15px 0;
-        }
-        .views-list a {
+        }}
+        .views-list a {{
             display: block;
             padding: 15px 20px;
             background-color: #007bff;
@@ -142,41 +100,28 @@ public class ViewsController : Controller
             text-decoration: none;
             border-radius: 5px;
             transition: background-color 0.3s;
-        }
-        .views-list a:hover {
+        }}
+        .views-list a:hover {{
             background-color: #0056b3;
-        }
-        .description {
+        }}
+        .description {{
             color: #666;
             font-size: 14px;
             margin-top: 5px;
-        }
+        }}
+        .no-views {{
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }}
     </style>
 </head>
 <body>
     <div class=""container"">
         <h1>WebLynx Views</h1>
         <ul class=""views-list"">
-            <li>
-                <a href=""/views/in_race_livestream"">In-Race Livestream</a>
-                <div class=""description"">Live race streaming view with real-time updates</div>
-            </li>
-            <li>
-                <a href=""/views/lap_counter"">Lap Counter</a>
-                <div class=""description"">Lap counting display for race tracking</div>
-            </li>
-            <li>
-                <a href=""/views/broadcast_results"">Broadcast Results</a>
-                <div class=""description"">Results display for broadcast purposes</div>
-            </li>
-            <li>
-                <a href=""/views/announcements"">Announcements</a>
-                <div class=""description"">Announcements and sponsor information display</div>
-            </li>
-            <li>
-                <a href=""/views/broadcast_race_overlay"">Broadcast Race Overlay</a>
-                <div class=""description"">Clean broadcast overlay with compact racer information and race clock</div>
-            </li>
+            {(discoveredViews.Any() ? viewsListHtml : "<li class=\"no-views\">No valid views found. Create directories in the Views folder with template.html files.</li>")}
         </ul>
     </div>
 </body>

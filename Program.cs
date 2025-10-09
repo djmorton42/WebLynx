@@ -34,6 +34,7 @@ builder.Services.AddSingleton<MessageParser>();
 builder.Services.AddSingleton<RaceStateManager>();
 builder.Services.AddSingleton<MultiPortTcpService>();
 builder.Services.AddSingleton<TemplateService>();
+builder.Services.AddSingleton<ViewDiscoveryService>();
 builder.Services.AddHostedService<LiveRaceFileWriter>();
 
 // Add API services
@@ -55,7 +56,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-// Serve static files from Views directory
+// Map controllers first to handle dynamic view routing
+app.MapControllers();
+
+// Serve static files from Views directory (for CSS, images, etc.)
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
@@ -70,14 +74,16 @@ app.UseStaticFiles(new StaticFileOptions
 // Serve other static files (like favicon.ico) from wwwroot
 app.UseStaticFiles();
 
-app.MapControllers();
-
 // Configure the HTTP port
 var httpPort = app.Configuration.GetValue<int>("HttpSettings:Port");
 app.Urls.Add($"http://0.0.0.0:{httpPort}");
 
 // Get the multi-port TCP service and start it
 var multiPortTcpService = app.Services.GetRequiredService<MultiPortTcpService>();
+
+// Initialize view discovery
+var viewDiscoveryService = app.Services.GetRequiredService<ViewDiscoveryService>();
+viewDiscoveryService.DiscoverViews();
 
 // Start the TCP listeners
 await multiPortTcpService.StartAsync();
