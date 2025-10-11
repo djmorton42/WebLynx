@@ -72,56 +72,6 @@ Currently, no authentication is required for API access. All endpoints are publi
 
 **Response:** Full `RaceData` object (see Models section for structure)
 
-### Get Event Information
-
-**Endpoint:** `GET /api/race/event`
-
-**Description:** Returns only the current event information.
-
-**Response:**
-```json
-{
-  "eventName": "Men's 1000m",
-  "eventNumber": "Event 1"
-}
-```
-
-### Get All Racers
-
-**Endpoint:** `GET /api/race/racers`
-
-**Description:** Returns array of all racers in the current race.
-
-**Response:** Array of `Racer` objects
-
-### Get Racer by Lane
-
-**Endpoint:** `GET /api/race/racers/{lane}`
-
-**Description:** Returns racer information for a specific lane.
-
-**Parameters:**
-- `lane` (path): Lane number (1-10)
-
-**Response:** Single `Racer` object or `null` if lane is empty
-
-### Get Race Status
-
-**Endpoint:** `GET /api/race/status`
-
-**Description:** Returns summary race status information.
-
-**Response:**
-```json
-{
-  "status": "Running",
-  "currentTime": "01:23.4",
-  "lastUpdated": "2024-01-15T10:30:45.123Z",
-  "racerCount": 8,
-  "eventName": "Men's 1000m"
-}
-```
-
 ### Test Announcement
 
 **Endpoint:** `POST /api/race/test-announcement`
@@ -271,11 +221,8 @@ curl http://localhost:5001/api/race/race-data
 # Get race data sorted by lane
 curl http://localhost:5001/api/race/race-data?sortBy=lane
 
-# Get specific racer
-curl http://localhost:5001/api/race/racers/1
-
-# Get race status
-curl http://localhost:5001/api/race/status
+# Get raw race data
+curl http://localhost:5001/api/race/current
 ```
 
 ## Integration Notes

@@ -80,10 +80,6 @@ WebLynx provides several REST API endpoints:
 
 - `GET /api/race/race-data` - Complete race data
 - `GET /api/race/current` - Current race state
-- `GET /api/race/event` - Event information
-- `GET /api/race/racers` - All racers
-- `GET /api/race/racers/{lane}` - Specific racer
-- `GET /api/race/status` - Race status summary
 - `GET /views` - View index page
 - `GET /views/{viewName}` - Specific view
 
