@@ -1,6 +1,6 @@
 # Configuration Properties for Views
 
-WebLynx provides static configuration properties that are automatically made available to all views through the template processing system. These properties are defined in the `appsettings.json` file and injected into HTML templates as JavaScript configuration objects.
+WebLynx provides dynamic configuration properties that are automatically made available to all views through the template processing system. These properties are defined in the `appsettings.json` file and injected into HTML templates as JavaScript configuration objects. **No code changes or recompilation are required** when adding new properties.
 
 ## How Configuration Properties Work
 
@@ -49,23 +49,24 @@ The `TemplateService` automatically processes all HTML templates and injects con
 - The JavaScript object is accessible as `VIEW_CONFIG` in your view's JavaScript code
 
 ### 3. JavaScript Configuration Object
-The injected configuration creates a `VIEW_CONFIG` object with the following structure:
+The injected configuration creates a `VIEW_CONFIG` object that dynamically includes **all** properties from the `ViewProperties` section. Property names are automatically converted to camelCase for JavaScript compatibility:
 
 ```javascript
 const VIEW_CONFIG = {
-  LANE_COLORS: {
+  laneColors: {
     "1": "#ffff00",
     "2": "#000000",
     // ... etc
   },
-  LANE_STROKE_COLORS: {
+  laneStrokeColors: {
     "1": "#000000",
     "2": "#ffffff",
     // ... etc
   },
-  UPDATE_INTERVAL: 250,
-  DEFAULT_LANE_COLOR: "#333333",
-  DEFAULT_STROKE_COLOR: "#ffffff"
+  updateInterval: 250,
+  defaultLaneColor: "#333333",
+  defaultStrokeColor: "#ffffff"
+  // Any additional properties you add will automatically appear here
 };
 ```
 
@@ -88,16 +89,16 @@ Use the `VIEW_CONFIG` object in your JavaScript code:
 ```javascript
 // Get lane color for a specific lane
 function getLaneColor(lane) {
-  return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+  return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
 }
 
 // Get stroke color for a specific lane
 function getStrokeColor(lane) {
-  return VIEW_CONFIG.LANE_STROKE_COLORS[lane] || VIEW_CONFIG.DEFAULT_STROKE_COLOR;
+  return VIEW_CONFIG.laneStrokeColors?.[lane] || VIEW_CONFIG.defaultStrokeColor;
 }
 
 // Use update interval for API calls
-const UPDATE_INTERVAL = VIEW_CONFIG.UPDATE_INTERVAL;
+const UPDATE_INTERVAL = VIEW_CONFIG.updateInterval;
 setInterval(updateRaceData, UPDATE_INTERVAL);
 ```
 
@@ -126,10 +127,10 @@ Here's how a typical view template uses configuration properties:
     
     <script>
       // Use configuration properties
-      const UPDATE_INTERVAL = VIEW_CONFIG.UPDATE_INTERVAL;
+      const UPDATE_INTERVAL = VIEW_CONFIG.updateInterval;
       
       function getLaneColor(lane) {
-        return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+        return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor;
       }
       
       function updateRaceData() {
@@ -154,40 +155,41 @@ Here's how a typical view template uses configuration properties:
 
 ## Adding New Configuration Properties
 
-To add new configuration properties:
+### Steps to Add New Properties
 
-1. **Add to appsettings.json**: Add your property to the `ViewProperties` section
-2. **Update TemplateService**: Modify the `InjectViewProperties` method to include your new property
-3. **Use in views**: Access the property via `VIEW_CONFIG.YOUR_PROPERTY_NAME`
+1. **Add to appsettings.json**: Simply add your property to the `ViewProperties` section
+2. **Use in views**: Access the property via `VIEW_CONFIG.yourPropertyName` (automatically converted to camelCase)
 
-Example adding a new property:
+### Example: Adding New Properties
+
+Add new properties to your `appsettings.json`:
 
 ```json
 {
   "ViewProperties": {
     "LaneColors": { /* existing */ },
     "UpdateInterval": 250,
-    "NewProperty": "value",
-    "NewNumericProperty": 100
+    "DefaultLaneColor": "#333333",
+    "DefaultStrokeColor": "#ffffff",
+    "NewCustomProperty": "Hello World",
+    "MaxLanes": 10,
+    "EnableAnimations": true,
+    "CustomColors": {
+      "primary": "#ff0000",
+      "secondary": "#00ff00"
+    }
   }
 }
 ```
 
-Then in `TemplateService.cs`:
+These properties will automatically be available in your views as:
 
-```csharp
-var newProperty = _viewProperties.GetProperty<string>("NewProperty", "default");
-var newNumericProperty = _viewProperties.GetProperty<int>("NewNumericProperty", 50);
-
-var viewConfigScript = $@"
-  <script>
-    const VIEW_CONFIG = {{
-      LANE_COLORS: {laneColorsJson},
-      UPDATE_INTERVAL: {updateInterval},
-      NEW_PROPERTY: '{newProperty}',
-      NEW_NUMERIC_PROPERTY: {newNumericProperty}
-    }};
-  </script>";
+```javascript
+// All properties are automatically available
+console.log(VIEW_CONFIG.newCustomProperty);     // "Hello World"
+console.log(VIEW_CONFIG.maxLanes);              // 10
+console.log(VIEW_CONFIG.enableAnimations);      // true
+console.log(VIEW_CONFIG.customColors.primary);  // "#ff0000"
 ```
 
 ## Best Practices

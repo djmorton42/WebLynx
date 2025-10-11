@@ -61,36 +61,26 @@ public class TemplateService
     {
         try
         {
-            // Create JavaScript configuration object from view properties
-            var laneColors = _viewProperties.GetDictionaryProperty<string>("LaneColors");
-            var laneStrokeColors = _viewProperties.GetDictionaryProperty<string>("LaneStrokeColors");
-            var updateInterval = _viewProperties.GetProperty<int>("UpdateInterval", 250);
-            var defaultLaneColor = _viewProperties.GetProperty<string>("DefaultLaneColor", "#333333");
-            var defaultStrokeColor = _viewProperties.GetProperty<string>("DefaultStrokeColor", "#ffffff");
+            // Dynamically serialize all view properties to JavaScript configuration
+            var viewConfigJson = JsonSerializer.Serialize(_viewProperties.Properties, new JsonSerializerOptions
+            {
+                WriteIndented = false,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
 
-            // Convert dictionaries to JavaScript objects
-            var laneColorsJson = JsonSerializer.Serialize(laneColors);
-            var laneStrokeColorsJson = JsonSerializer.Serialize(laneStrokeColors);
-
-            // Create the JavaScript configuration
+            // Create the JavaScript configuration with dynamic properties
             var viewConfigScript = $@"
       <script>
-        // View Properties Configuration
-        const VIEW_CONFIG = {{
-          LANE_COLORS: {laneColorsJson},
-          LANE_STROKE_COLORS: {laneStrokeColorsJson},
-          UPDATE_INTERVAL: {updateInterval},
-          DEFAULT_LANE_COLOR: '{defaultLaneColor}',
-          DEFAULT_STROKE_COLOR: '{defaultStrokeColor}'
-        }};
+        // View Properties Configuration - Dynamically loaded from appsettings.json
+        const VIEW_CONFIG = {viewConfigJson};
         
         // Helper functions for backward compatibility
         function getLaneColor(lane) {{
-          return VIEW_CONFIG.LANE_COLORS[lane] || VIEW_CONFIG.DEFAULT_LANE_COLOR;
+          return VIEW_CONFIG.laneColors?.[lane] || VIEW_CONFIG.defaultLaneColor || '#333333';
         }}
         
         function getStrokeColor(lane) {{
-          return VIEW_CONFIG.LANE_STROKE_COLORS[lane] || VIEW_CONFIG.DEFAULT_STROKE_COLOR;
+          return VIEW_CONFIG.laneStrokeColors?.[lane] || VIEW_CONFIG.defaultStrokeColor || '#ffffff';
         }}
       </script>";
 
