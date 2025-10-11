@@ -13,11 +13,11 @@ rm -rf bin/ publish/ WebLynx-*-x64.zip
 
 # Build for Windows
 echo "Building for Windows (x64)..."
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64/
+dotnet publish WebLynx.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64/
 
 # Build for macOS
 echo "Building for macOS (x64)..."
-dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/osx-x64/
+dotnet publish WebLynx.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o publish/osx-x64/
 
 # Function to create distribution package
 create_distribution() {
