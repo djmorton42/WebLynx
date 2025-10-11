@@ -85,10 +85,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-// Map controllers first to handle dynamic view routing
-app.MapControllers();
-
-// Serve static files from Views directory (for CSS, images, etc.)
+// Serve static files from Views directory (for CSS, images, etc.) BEFORE controller mapping
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
@@ -102,6 +99,9 @@ app.UseStaticFiles(new StaticFileOptions
 
 // Serve other static files (like favicon.ico) from wwwroot
 app.UseStaticFiles();
+
+// Map controllers AFTER static files to handle dynamic view routing
+app.MapControllers();
 
 // Configure the HTTP port
 var httpPort = app.Configuration.GetValue<int>("HttpSettings:Port");

@@ -138,6 +138,113 @@ The `{{VIEW_PROPERTIES}}` placeholder is replaced with:
 
 ## Live Data Integration
 
+## Shared Helper Functions
+
+WebLynx provides a shared JavaScript library with common utility functions to reduce code duplication and ensure consistent behavior across views.
+
+### Including the Helper Library
+
+Add this script tag to your view's HTML head section:
+
+```html
+<script src="/views/shared/weblynx-helpers.js"></script>
+```
+
+### Available Helper Functions
+
+#### Time Formatting
+```javascript
+// Format TimeSpan to "mm:ss.fff" (detailed times)
+WebLynx.formatTime(data.currentTime)
+
+// Format TimeSpan to "mm:ss.f" (race clock)
+WebLynx.formatRaceTime(data.currentTime)
+```
+
+#### Lap Display
+```javascript
+// Format laps with half-lap logic
+WebLynx.formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled)
+
+// Format laps with HTML for half-lap fractions
+WebLynx.formatLapsDisplayHTML(lapsRemaining, raceStatus, halfLapModeEnabled)
+```
+
+#### Race Data Management
+```javascript
+// Fetch race data with error handling
+WebLynx.fetchRaceData('place') // or 'lane'
+
+// Update race data with callback
+WebLynx.updateRaceData((data, error) => {
+  if (error) {
+    console.error('Error:', error);
+    return;
+  }
+  // Update your view with data
+}, 'place');
+
+// Start automatic updates
+WebLynx.startAutoUpdate(updateFunction, 2000, 'place');
+```
+
+#### Status Helpers
+```javascript
+// Get status display info
+const statusInfo = WebLynx.getStatusInfo(data.status);
+// Returns: { text: 'Running', class: 'running' }
+
+// Check if race is running
+if (WebLynx.isRaceRunning(data.status)) {
+  // Race is active
+}
+```
+
+#### Utility Functions
+```javascript
+// Check if place text is alpha code (DNF, DNS, etc.)
+if (WebLynx.isAlphaCode(racer.placeText)) {
+  // Handle non-numeric place
+}
+
+// Filter active racers
+const activeRacers = WebLynx.getActiveRacers(data.racers);
+```
+
+### Example: Using Helper Functions
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="/views/shared/weblynx-helpers.js"></script>
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <div id="race-clock">00:00.0</div>
+    <div id="event-name">Loading...</div>
+    
+    <script>
+      function updateView(data, error) {
+        if (error) {
+          console.error('Error:', error);
+          return;
+        }
+        
+        // Use helper functions
+        document.getElementById('race-clock').textContent = 
+          WebLynx.formatRaceTime(data.currentTime);
+        document.getElementById('event-name').textContent = 
+          data.event?.eventName || 'No Event';
+      }
+      
+      // Start automatic updates
+      WebLynx.startAutoUpdate(updateView, VIEW_CONFIG.UPDATE_INTERVAL);
+    </script>
+  </body>
+</html>
+```
+
 Views fetch live race data using JavaScript API calls:
 
 ### Basic Data Fetching
@@ -184,35 +291,20 @@ See the [API Reference](api-reference.md) for complete data structure details.
   <body>
     <div class="clock" id="race-clock">00:00.0</div>
     
+    <script src="/views/shared/weblynx-helpers.js"></script>
     <script>
-      function formatRaceTime(timeSpanString) {
-        if (!timeSpanString) return '00:00.0';
+      function updateRaceClock(data, error) {
+        if (error) {
+          console.error('Error:', error);
+          return;
+        }
         
-        const parts = timeSpanString.split(':');
-        const hours = parseInt(parts[0]) || 0;
-        const minutes = parseInt(parts[1]) || 0;
-        const secondsParts = parts[2].split('.');
-        const seconds = parseInt(secondsParts[0]) || 0;
-        
-        const totalMinutes = hours * 60 + minutes;
-        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
-        const formattedSeconds = seconds.toString().padStart(2, '0');
-        
-        return `${formattedMinutes}:${formattedSeconds}.0`;
+        document.getElementById('race-clock').textContent = 
+          WebLynx.formatRaceTime(data.currentTime);
       }
       
-      function updateRaceData() {
-        fetch('/api/race/race-data')
-          .then(response => response.json())
-          .then(data => {
-            document.getElementById('race-clock').textContent = 
-              formatRaceTime(data.currentTime);
-          })
-          .catch(error => console.error('Error:', error));
-      }
-      
-      updateRaceData();
-      setInterval(updateRaceData, VIEW_CONFIG.UPDATE_INTERVAL);
+      // Start automatic updates
+      WebLynx.startAutoUpdate(updateRaceClock, VIEW_CONFIG.UPDATE_INTERVAL);
     </script>
   </body>
 </html>
