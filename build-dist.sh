@@ -44,6 +44,12 @@ create_distribution() {
     # Copy documentation
     echo "Copying documentation..."
     cp README.md "$DIST_DIR/"
+    
+    # Copy docs directory if it exists
+    if [ -d "docs" ]; then
+        echo "Copying docs directory..."
+        cp -r docs "$DIST_DIR/"
+    fi
 
     # Copy Views directory (web interface templates and assets)
     echo "Copying Views directory..."
@@ -123,6 +129,7 @@ echo "  - Main application executable"
 echo "  - appsettings.json (configuration)"
 echo "  - README.md (documentation)"
 echo "  - CONFIGURATION.md (configuration guide)"
+echo "  - docs/ (comprehensive documentation)"
 echo "  - Views/ (web interface templates and assets)"
 echo ""
 echo "To distribute:"
