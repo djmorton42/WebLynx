@@ -89,9 +89,10 @@ WebLynx.formatRaceTime = function(timeSpanString) {
  * @param {number} lapsRemaining - Number of laps remaining
  * @param {string|number} raceStatus - Current race status
  * @param {boolean} halfLapModeEnabled - Whether half-lap mode is enabled
+ * @param {boolean} hasFirstCrossing - Whether racer has completed first crossing
  * @returns {string} Formatted laps display
  */
-WebLynx.formatLapsDisplay = function(lapsRemaining, raceStatus, halfLapModeEnabled) {
+WebLynx.formatLapsDisplay = function(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
   if (lapsRemaining === null || lapsRemaining === undefined) {
     return '-';
   }
@@ -112,9 +113,9 @@ WebLynx.formatLapsDisplay = function(lapsRemaining, raceStatus, halfLapModeEnabl
         // Whole lap race: always subtract 1 after race starts
         displayValue = lapsRemaining - 1;
         
-        // If the value would be negative, show hyphen
+        // If the value would be negative, show finished text
         if (displayValue < 0) {
-          return '-';
+          return VIEW_CONFIG.finishedText || '-';
         }
       }
     }
@@ -122,9 +123,9 @@ WebLynx.formatLapsDisplay = function(lapsRemaining, raceStatus, halfLapModeEnabl
     // Half-lap mode disabled: always subtract 1 from display value
     displayValue = lapsRemaining - 1;
     
-    // If the value would be negative, show hyphen
+    // If the value would be negative, show finished text
     if (displayValue < 0) {
-      return '-';
+      return VIEW_CONFIG.finishedText || '-';
     }
   }
   
@@ -150,12 +151,14 @@ WebLynx.formatLapsDisplay = function(lapsRemaining, raceStatus, halfLapModeEnabl
  * @param {number} lapsRemaining - Number of laps remaining
  * @param {string|number} raceStatus - Current race status
  * @param {boolean} halfLapModeEnabled - Whether half-lap mode is enabled
+ * @param {boolean} hasFirstCrossing - Whether racer has completed first crossing
  * @returns {string} Formatted laps display with HTML
  */
-WebLynx.formatLapsDisplayHTML = function(lapsRemaining, raceStatus, halfLapModeEnabled) {
+WebLynx.formatLapsDisplayHTML = function(lapsRemaining, raceStatus, halfLapModeEnabled, hasFirstCrossing) {
   if (lapsRemaining === null || lapsRemaining === undefined) {
     return '-';
   }
+  
   
   // Apply half-lap mode display logic
   let displayValue = lapsRemaining;
@@ -173,9 +176,9 @@ WebLynx.formatLapsDisplayHTML = function(lapsRemaining, raceStatus, halfLapModeE
         // Whole lap race: always subtract 1 after race starts
         displayValue = lapsRemaining - 1;
         
-        // If the value would be negative, show hyphen
+        // If the value would be negative, show finished text
         if (displayValue < 0) {
-          return '-';
+          return VIEW_CONFIG.finishedText || '-';
         }
       }
     }
@@ -183,9 +186,9 @@ WebLynx.formatLapsDisplayHTML = function(lapsRemaining, raceStatus, halfLapModeE
     // Half-lap mode disabled: always subtract 1 from display value
     displayValue = lapsRemaining - 1;
     
-    // If the value would be negative, show hyphen
+    // If the value would be negative, show finished text
     if (displayValue < 0) {
-      return '-';
+      return VIEW_CONFIG.finishedText || '-';
     }
   }
   

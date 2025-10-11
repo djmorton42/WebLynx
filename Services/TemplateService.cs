@@ -11,12 +11,12 @@ public class TemplateService
     private readonly BroadcastSettings _broadcastSettings;
     private readonly ViewProperties _viewProperties;
 
-    public TemplateService(ILogger<TemplateService> logger, IOptions<BroadcastSettings> broadcastSettings, IOptions<ViewProperties> viewProperties)
+    public TemplateService(ILogger<TemplateService> logger, IOptions<BroadcastSettings> broadcastSettings, ViewProperties viewProperties)
     {
         _logger = logger;
         _templatePath = Path.Combine("Views", "in_race_livestream", "template.html");
         _broadcastSettings = broadcastSettings.Value;
-        _viewProperties = viewProperties.Value;
+        _viewProperties = viewProperties;
     }
 
     public string ProcessTemplate(RaceData raceData, string viewName)
@@ -61,11 +61,13 @@ public class TemplateService
     {
         try
         {
-            // Dynamically serialize all view properties to JavaScript configuration
-            var viewConfigJson = JsonSerializer.Serialize(_viewProperties.Properties, new JsonSerializerOptions
+            // Convert Properties dictionary to camelCase for JavaScript
+            var camelCaseProperties = ConvertToCamelCase(_viewProperties.Properties);
+
+            // Serialize with camelCase property names
+            var viewConfigJson = JsonSerializer.Serialize(camelCaseProperties, new JsonSerializerOptions
             {
-                WriteIndented = false,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                WriteIndented = false
             });
 
             // Create the JavaScript configuration with dynamic properties
@@ -116,6 +118,29 @@ public class TemplateService
             _logger.LogError(ex, "Error injecting view properties into template");
             return template;
         }
+    }
+
+    private static object ConvertToCamelCase(object value)
+    {
+        if (value is Dictionary<string, object> dict)
+        {
+            var camelCaseDict = new Dictionary<string, object>();
+            foreach (var kvp in dict)
+            {
+                var camelCaseKey = ToCamelCase(kvp.Key);
+                camelCaseDict[camelCaseKey] = ConvertToCamelCase(kvp.Value);
+            }
+            return camelCaseDict;
+        }
+        return value;
+    }
+
+    private static string ToCamelCase(string input)
+    {
+        if (string.IsNullOrEmpty(input) || char.IsLower(input[0]))
+            return input;
+
+        return char.ToLowerInvariant(input[0]) + input.Substring(1);
     }
 
     private string GenerateFallbackHtml(RaceData raceData, string viewName)

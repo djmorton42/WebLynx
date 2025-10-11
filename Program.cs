@@ -46,9 +46,8 @@ builder.Services.Configure<WebLynx.Models.LapCounterSettings>(
 builder.Services.Configure<WebLynx.Models.LoggingSettings>(
     builder.Configuration.GetSection("LoggingSettings"));
 
-// Configure view properties
-builder.Services.Configure<WebLynx.Models.ViewProperties>(
-    builder.Configuration.GetSection("ViewProperties"));
+// Configure view properties as singleton with direct configuration access
+builder.Services.AddSingleton<WebLynx.Models.ViewProperties>();
 
 // Configure host options for faster shutdown
 builder.Services.Configure<HostOptions>(options =>

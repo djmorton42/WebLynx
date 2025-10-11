@@ -15,13 +15,13 @@ public class ViewsController : Controller
     private readonly ViewDiscoveryService _viewDiscoveryService;
     private readonly ViewProperties _viewProperties;
 
-    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService, ViewDiscoveryService viewDiscoveryService, IOptions<ViewProperties> viewProperties)
+    public ViewsController(ILogger<ViewsController> logger, RaceStateManager raceStateManager, TemplateService templateService, ViewDiscoveryService viewDiscoveryService, ViewProperties viewProperties)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
         _templateService = templateService;
         _viewDiscoveryService = viewDiscoveryService;
-        _viewProperties = viewProperties.Value;
+        _viewProperties = viewProperties;
     }
 
     [HttpGet("views/{viewName}")]
@@ -174,6 +174,30 @@ public class ViewsController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving view property {PropertyName}", propertyName);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    [HttpPost("api/views/refresh")]
+    public IActionResult RefreshViews()
+    {
+        try
+        {
+            _logger.LogInformation("Refreshing view discovery...");
+            _viewDiscoveryService.DiscoverViews();
+            
+            var discoveredViews = _viewDiscoveryService.DiscoveredViews.Where(v => v.IsValid).ToList();
+            _logger.LogInformation("View refresh completed. Found {Count} valid views", discoveredViews.Count);
+            
+            return Ok(new { 
+                message = "Views refreshed successfully", 
+                viewCount = discoveredViews.Count,
+                views = discoveredViews.Select(v => new { v.Name, v.DisplayName, v.Description })
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error refreshing views");
             return StatusCode(500, "Internal server error");
         }
     }

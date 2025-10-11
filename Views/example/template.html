@@ -132,7 +132,7 @@
         clone.querySelector('.racer-name').textContent = racer.name || '-';
         clone.querySelector('.racer-affiliation').textContent = racer.affiliation || '-';
         clone.querySelector('.racer-time').textContent = WebLynx.formatTime(racer.cumulativeSplitTime);
-        clone.querySelector('.racer-laps').textContent = WebLynx.formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled);
+        clone.querySelector('.racer-laps').textContent = WebLynx.formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled, racer.hasFirstCrossing);
         clone.querySelector('.racer-place').textContent = racer.place || '-';
         
         return clone;
