@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/views/example/logo.png">
+    <link rel="stylesheet" href="/views/example/styles.css">
+    {{VIEW_PROPERTIES}}
+  </head>
+  <body>
+    <!-- Header Section with Logo and Title -->
+    <div class="header-section">
+      <div class="logo-container">
+        <img src="/views/example/logo.png" alt="Example Logo" class="main-logo">
+      </div>
+      <div class="title-section">
+        <h1 class="main-title" id="main-title">{{MEET_TITLE}}</h1>
+        <h2 class="subtitle" id="subtitle">{{EVENT_SUBTITLE}}</h2>
+      </div>
+      <div class="status-indicator" id="status-indicator">
+        <span class="status-dot"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+      <!-- Race Information Panel -->
+      <div class="info-panel race-info">
+        <h3>Race Information</h3>
+        <div class="info-item">
+          <span class="label">Event:</span>
+          <span class="value" id="event-name">Loading...</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Status:</span>
+          <span class="value" id="race-status">Not Started</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Current Time:</span>
+          <span class="value" id="current-time">00:00.0</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Lap Mode:</span>
+          <span class="value" id="lap-mode">Standard</span>
+        </div>
+      </div>
+
+      <!-- Racers Panel -->
+      <div class="info-panel racers-panel">
+        <h3>Racers</h3>
+        <div class="racers-list" id="racers-list">
+          <!-- Racers will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Announcements Panel -->
+      <div class="info-panel announcements-panel">
+        <h3>Announcements</h3>
+        <div class="announcement-content" id="announcement-content">
+          <div class="no-announcement">No announcements</div>
+        </div>
+      </div>
+
+      <!-- Statistics Panel -->
+      <div class="info-panel stats-panel">
+        <h3>Race Statistics</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" id="total-racers">0</span>
+            <span class="stat-label">Total Racers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="active-racers">0</span>
+            <span class="stat-label">Active</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="finished-racers">0</span>
+            <span class="stat-label">Finished</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" id="avg-lap-time">--:--</span>
+            <span class="stat-label">Avg Lap Time</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Race Clock -->
+    <div class="floating-clock" id="floating-clock">
+      <div class="clock-time">00:00.0</div>
+      <div class="clock-label">Race Time</div>
+    </div>
+
+    <!-- HTML5 Template for racer items -->
+    <template id="racer-template">
+      <div class="racer-item">
+        <div class="racer-lane" style="background-color: var(--lane-color);"></div>
+        <div class="racer-details">
+          <div class="racer-name"></div>
+          <div class="racer-affiliation"></div>
+        </div>
+        <div class="racer-times">
+          <div class="racer-time"></div>
+          <div class="racer-laps"></div>
+        </div>
+        <div class="racer-place"></div>
+      </div>
+    </template>
+
+    <script>
+      // Configuration
+      const UPDATE_INTERVAL = VIEW_CONFIG?.UPDATE_INTERVAL || 2000;
+      const LANE_COLORS = VIEW_CONFIG?.LANE_COLORS || {
+        1: '#FF6B6B', 2: '#4ECDC4', 3: '#45B7D1', 4: '#96CEB4',
+        5: '#FFEAA7', 6: '#DDA0DD', 7: '#98D8C8', 8: '#F7DC6F',
+        9: '#BB8FCE', 10: '#85C1E9'
+      };
+      const DEFAULT_LANE_COLOR = VIEW_CONFIG?.DEFAULT_LANE_COLOR || '#CCCCCC';
+
+      // Utility Functions
+      function formatTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.000';
+        
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.000';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        let milliseconds = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          milliseconds = Math.floor(parseInt(fractionalPart.substring(0, 3)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        const formattedMilliseconds = milliseconds.toString().padStart(3, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+      }
+
+      function formatRaceTime(timeSpanString) {
+        if (!timeSpanString) return '00:00.0';
+        
+        const parts = timeSpanString.split(':');
+        if (parts.length !== 3) return '00:00.0';
+        
+        const hours = parseInt(parts[0]) || 0;
+        const minutes = parseInt(parts[1]) || 0;
+        const secondsParts = parts[2].split('.');
+        const seconds = parseInt(secondsParts[0]) || 0;
+        
+        let tenths = 0;
+        if (secondsParts[1]) {
+          const fractionalPart = secondsParts[1].padEnd(7, '0');
+          tenths = Math.floor(parseInt(fractionalPart.substring(0, 1)) || 0);
+        }
+        
+        const totalMinutes = hours * 60 + minutes;
+        const formattedMinutes = totalMinutes.toString().padStart(2, '0');
+        const formattedSeconds = seconds.toString().padStart(2, '0');
+        
+        return `${formattedMinutes}:${formattedSeconds}.${tenths}`;
+      }
+
+      function getLaneColor(lane) {
+        return LANE_COLORS[lane] || DEFAULT_LANE_COLOR;
+      }
+
+      function formatLapsDisplay(lapsRemaining, raceStatus, halfLapModeEnabled) {
+        if (lapsRemaining === null || lapsRemaining === undefined) return '-';
+        
+        let displayValue = lapsRemaining;
+        
+        if (halfLapModeEnabled) {
+          if (raceStatus === 'NotStarted' || raceStatus === 0) {
+            displayValue = lapsRemaining;
+          } else {
+            if (lapsRemaining % 1 === 0.5) {
+              displayValue = Math.floor(lapsRemaining);
+            } else {
+              displayValue = lapsRemaining - 1;
+              if (displayValue < 0) return '-';
+            }
+          }
+        } else {
+          displayValue = lapsRemaining - 1;
+          if (displayValue < 0) return '-';
+        }
+        
+        if (raceStatus === 'Running' || raceStatus === 'Paused' || raceStatus === 'Finished') {
+          return Math.floor(displayValue).toString();
+        }
+        
+        if (displayValue % 1 === 0.5) {
+          const wholePart = Math.floor(displayValue);
+          return wholePart + ' 1/2';
+        }
+        
+        return displayValue.toString();
+      }
+
+      function createRacerItem(racer, raceStatus, halfLapModeEnabled) {
+        const template = document.getElementById('racer-template');
+        const clone = template.content.cloneNode(true);
+        
+        const laneColor = getLaneColor(racer.lane);
+        clone.querySelector('.racer-item').style.setProperty('--lane-color', laneColor);
+        
+        clone.querySelector('.racer-name').textContent = racer.name || '-';
+        clone.querySelector('.racer-affiliation').textContent = racer.affiliation || '-';
+        clone.querySelector('.racer-time').textContent = formatTime(racer.cumulativeSplitTime);
+        clone.querySelector('.racer-laps').textContent = formatLapsDisplay(racer.delayedLapsRemaining, raceStatus, halfLapModeEnabled);
+        clone.querySelector('.racer-place').textContent = racer.place || '-';
+        
+        return clone;
+      }
+
+      function updateRaceData() {
+        fetch('/api/race/race-data')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update race information
+            document.getElementById('event-name').textContent = data.event?.eventName || 'No Event';
+            document.getElementById('race-status').textContent = data.status || 'Unknown';
+            document.getElementById('current-time').textContent = formatRaceTime(data.currentTime);
+            document.getElementById('lap-mode').textContent = data.halfLapModeEnabled ? 'Half-Lap' : 'Standard';
+            
+            // Update floating clock
+            document.getElementById('floating-clock').querySelector('.clock-time').textContent = formatRaceTime(data.currentTime);
+            
+            // Update status indicator
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusDot = statusIndicator.querySelector('.status-dot');
+            const statusText = statusIndicator.querySelector('.status-text');
+            
+            // Map race status to display text and CSS class
+            const statusMap = {
+              'NotStarted': { text: 'Ready', class: 'notstarted' },
+              'Running': { text: 'Running', class: 'running' },
+              'Paused': { text: 'Paused', class: 'paused' },
+              'Finished': { text: 'Finished', class: 'finished' },
+              '0': { text: 'Ready', class: 'notstarted' },
+              '1': { text: 'Running', class: 'running' },
+              '2': { text: 'Paused', class: 'paused' },
+              '3': { text: 'Finished', class: 'finished' }
+            };
+            
+            const raceStatus = data.status || 'NotStarted';
+            const statusInfo = statusMap[raceStatus] || { text: raceStatus, class: 'notstarted' };
+            
+            statusText.textContent = statusInfo.text;
+            statusDot.className = 'status-dot ' + statusInfo.class;
+            
+            // Update racers
+            const racersList = document.getElementById('racers-list');
+            racersList.innerHTML = '';
+            
+            const activeRacers = data.racers.filter(racer => racer.lane > 0);
+            const halfLapModeEnabled = data.halfLapModeEnabled || false;
+            
+            activeRacers.forEach(racer => {
+              racersList.appendChild(createRacerItem(racer, data.status, halfLapModeEnabled));
+            });
+            
+            // Update statistics
+            document.getElementById('total-racers').textContent = data.racers.length;
+            document.getElementById('active-racers').textContent = activeRacers.length;
+            document.getElementById('finished-racers').textContent = data.racers.filter(r => r.status === 'Finished').length;
+            
+            // Calculate average lap time (simplified)
+            const times = activeRacers.map(r => r.cumulativeSplitTime).filter(t => t);
+            if (times.length > 0) {
+              // This is a simplified calculation - in reality you'd want more sophisticated logic
+              document.getElementById('avg-lap-time').textContent = formatTime(times[0]);
+            } else {
+              document.getElementById('avg-lap-time').textContent = '--:--';
+            }
+            
+            // Update announcements
+            const announcementContent = document.getElementById('announcement-content');
+            if (data.announcementMessage && data.announcementMessage.trim()) {
+              announcementContent.innerHTML = `<div class="announcement-message">${data.announcementMessage}</div>`;
+            } else {
+              announcementContent.innerHTML = '<div class="no-announcement">No announcements</div>';
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching race data:', error);
+            // Only show error status if we can't connect at all
+            const statusIndicator = document.getElementById('status-indicator');
+            const statusDot = statusIndicator.querySelector('.status-dot');
+            const statusText = statusIndicator.querySelector('.status-text');
+            
+            statusText.textContent = 'Disconnected';
+            statusDot.className = 'status-dot error';
+          });
+      }
+
+      // Start updating
+      updateRaceData(); // Initial load
+      setInterval(updateRaceData, UPDATE_INTERVAL);
+    </script>
+  </body>
+</html>
