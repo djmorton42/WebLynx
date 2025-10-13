@@ -52,6 +52,25 @@ public class ViewsController : Controller
     {
         var discoveredViews = _viewDiscoveryService.DiscoveredViews.Where(v => v.IsValid).ToList();
         
+        // Read version from VERSION.txt if present
+        string versionText = "";
+        var versionFilePath = Path.Combine(Directory.GetCurrentDirectory(), "VERSION.txt");
+        if (System.IO.File.Exists(versionFilePath))
+        {
+            try
+            {
+                var version = System.IO.File.ReadAllText(versionFilePath).Trim();
+                if (!string.IsNullOrEmpty(version))
+                {
+                    versionText = $@"<div class=""version"">Version {version}</div>";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not read VERSION.txt file");
+            }
+        }
+        
         var viewsListHtml = string.Join("\n", discoveredViews.Select(view => {
             var descriptionHtml = !string.IsNullOrEmpty(view.Description) 
                 ? $@"<div class=""description"">{view.Description}</div>" 
@@ -119,11 +138,19 @@ public class ViewsController : Controller
             font-style: italic;
             padding: 40px;
         }}
+        .version {{
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }}
     </style>
 </head>
 <body>
     <div class=""container"">
         <h1>WebLynx Views</h1>
+        {versionText}
         <ul class=""views-list"">
             {(discoveredViews.Any() ? viewsListHtml : "<li class=\"no-views\">No valid views found. Create directories in the Views folder with template.html files.</li>")}
         </ul>
