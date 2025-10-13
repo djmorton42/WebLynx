@@ -99,6 +99,9 @@ app.UseStaticFiles(new StaticFileOptions
 // Serve other static files (like favicon.ico) from wwwroot
 app.UseStaticFiles();
 
+// Add redirect from root to /views
+app.MapGet("/", () => Results.Redirect("/views"));
+
 // Map controllers AFTER static files to handle dynamic view routing
 app.MapControllers();
 
