@@ -72,6 +72,8 @@ const VIEW_CONFIG = {
 
 ## Available Configuration Properties
 
+Any JSON content can be provided in the ViewProperties. This data will be made available to all views. The example appsettings.json contains a property for specifying a refresh interval, and definitions of colors to associate with each racer lane. You can add whatever properties are reasonable for your usecase.
+
 ### Lane Colors
 - **LaneColors**: Dictionary mapping lane numbers (1-10) to hex color codes
 - **LaneStrokeColors**: Dictionary mapping lane numbers (1-10) to stroke/border color codes
