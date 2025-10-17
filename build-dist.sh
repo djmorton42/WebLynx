@@ -55,7 +55,10 @@ create_distribution() {
     echo "Copying Views directory..."
     cp -r Views "$DIST_DIR/"
 
-    # Note: etc directory contains example files and is not needed for distribution
+    # Copy specific files from etc directory
+    echo "Copying WebLynx.lss configuration file..."
+    cp etc/WebLynx.lss "$DIST_DIR/"
+
     # Note: log directory will be created by the application at runtime if needed
 
     # Create a configuration guide
@@ -127,6 +130,7 @@ echo ""
 echo "Each package includes:"
 echo "  - Main application executable"
 echo "  - appsettings.json (configuration)"
+echo "  - WebLynx.lss (FinishLynx configuration template)"
 echo "  - README.md (documentation)"
 echo "  - CONFIGURATION.md (configuration guide)"
 echo "  - docs/ (comprehensive documentation)"
