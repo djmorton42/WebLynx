@@ -38,6 +38,10 @@ Currently, no authentication is required for API access. All endpoints are publi
   "lastUpdated": "2024-01-15T10:30:45.123Z",
   "announcementMessage": "Race in progress",
   "halfLapModeEnabled": true,
+  "keyValues": {
+    "customKey1": "customValue1",
+    "customKey2": "customValue2"
+  },
   "racers": [
     {
       "lane": 1,
@@ -87,6 +91,53 @@ Currently, no authentication is required for API access. All endpoints are publi
 
 **Response:** Success confirmation
 
+## Key-Value Store API
+
+WebLynx provides a simple key-value store for storing arbitrary values that can be accessed by views via the JSON API. This is useful for custom data that needs to be displayed alongside race information.
+
+### Key-Value Store Management
+
+**Endpoint:** `GET /key-values`
+
+**Description:** Displays a web form for managing key-value pairs. Shows all currently stored values in a table and provides a form to add, update, or remove entries.
+
+**Response:** HTML page with:
+- Form to set key-value pairs
+- Table listing all current stored values
+- Empty value removes the key
+
+### Set Key-Value Pair
+
+**Endpoint:** `POST /key-values`
+
+**Description:** Sets or removes a key-value pair. If the value is empty, the key is removed.
+
+**Request Body:** (Form-encoded)
+```
+key=exampleKey
+value=exampleValue
+```
+
+**Parameters:**
+- `key` (required): The key name
+- `value` (optional): The value to store. If empty or omitted, the key is removed.
+
+**Response:** Redirects to `/key-values` (GET) after processing
+
+### Accessing Key-Values in Views
+
+Key-value pairs are automatically included in the race data API response under the `keyValues` field:
+
+```javascript
+fetch('/api/race/race-data')
+  .then(response => response.json())
+  .then(data => {
+    // Access stored key-values
+    const customValue = data.keyValues['exampleKey'];
+    console.log('Custom value:', customValue);
+  });
+```
+
 ## Data Models
 
 ### RaceDataApiResponse
@@ -98,6 +149,7 @@ interface RaceDataApiResponse {
   lastUpdated: string;         // ISO 8601 timestamp
   announcementMessage: string | null;
   halfLapModeEnabled: boolean;
+  keyValues: { [key: string]: string };  // Arbitrary key-value pairs
   racers: RacerApiResponse[];
 }
 ```

@@ -14,13 +14,15 @@ public class RaceController : ControllerBase
     private readonly RaceStateManager _raceStateManager;
     private readonly TemplateService _templateService;
     private readonly LapCounterSettings _lapCounterSettings;
+    private readonly KeyValueStoreService _keyValueStore;
 
-    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager, TemplateService templateService, IOptions<LapCounterSettings> lapCounterSettings)
+    public RaceController(ILogger<RaceController> logger, RaceStateManager raceStateManager, TemplateService templateService, IOptions<LapCounterSettings> lapCounterSettings, KeyValueStoreService keyValueStore)
     {
         _logger = logger;
         _raceStateManager = raceStateManager;
         _templateService = templateService;
         _lapCounterSettings = lapCounterSettings.Value;
+        _keyValueStore = keyValueStore;
     }
 
     [HttpGet("current")]
@@ -55,6 +57,7 @@ public class RaceController : ControllerBase
                 LastUpdated = raceData.LastUpdated,
                 AnnouncementMessage = raceData.AnnouncementMessage,
                 HalfLapModeEnabled = _lapCounterSettings.HalfLapModeEnabled,
+                KeyValues = _keyValueStore.GetAllValues(),
                 Racers = sortedRacers.Select(r => new RacerApiResponse
                 {
                     Lane = r.Lane,

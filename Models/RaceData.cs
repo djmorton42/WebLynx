@@ -265,6 +265,7 @@ public class RaceDataApiResponse
     public List<RacerApiResponse> Racers { get; set; } = new();
     public string? AnnouncementMessage { get; set; }
     public bool HalfLapModeEnabled { get; set; }
+    public Dictionary<string, string> KeyValues { get; set; } = new();
 }
 
 public class RacerApiResponse

@@ -8,6 +8,7 @@ WebLynx receives live timing data from FinishLynx via TCP connections and provid
 - Real-time race data via REST API
 - Customizable HTML5-based views for displays
 - Static configuration properties for views
+- In-memory key-value store for custom data
 - Automatic view discovery and management
 
 ## Quick Start
@@ -63,6 +64,7 @@ WebLynx consists of several key components:
 - **RaceStateManager**: Maintains current race state
 - **TemplateService**: Processes HTML templates
 - **ViewDiscoveryService**: Discovers and validates views
+- **KeyValueStoreService**: Manages in-memory key-value storage
 - **Controllers**: Provide REST API endpoints
 
 ## Views System
@@ -71,6 +73,7 @@ Views are HTML5 templates located in the `Views` directory. Each view:
 - Is automatically discovered on startup
 - Has access to live race data via JavaScript API
 - Can use static configuration properties
+- Can access custom key-value pairs via the race data API
 - Supports CSS styling and static assets
 - Is accessible via HTTP endpoints
 
@@ -78,8 +81,10 @@ Views are HTML5 templates located in the `Views` directory. Each view:
 
 WebLynx provides several REST API endpoints:
 
-- `GET /api/race/race-data` - Complete race data
+- `GET /api/race/race-data` - Complete race data (includes key-values)
 - `GET /api/race/current` - Current race state
+- `GET /key-values` - Key-value store management interface
+- `POST /key-values` - Set or remove key-value pairs
 - `GET /views` - View index page
 - `GET /views/{viewName}` - Specific view
 

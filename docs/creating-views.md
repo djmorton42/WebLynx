@@ -8,6 +8,7 @@ Views are HTML5 templates that:
 - Are automatically discovered from the `Views` directory
 - Have access to live race data via JavaScript API calls
 - Can use static configuration properties from `appsettings.json`
+- Can access custom key-value pairs from the in-memory store
 - Support CSS styling and static assets (images, fonts, etc.)
 - Are processed server-side to inject configuration values
 
@@ -271,6 +272,30 @@ The API provides comprehensive race data including:
 - Event information
 - Individual racer data (times, laps, places)
 - Configuration settings
+- Custom key-value pairs (via `keyValues` field)
+
+### Accessing Key-Value Pairs
+Key-value pairs are included in the race data API response and can be accessed in your views:
+
+```javascript
+async function fetchRaceData() {
+  const response = await fetch('/api/race/race-data');
+  const data = await response.json();
+  
+  // Access custom key-value pairs
+  const customValue = data.keyValues['myCustomKey'];
+  if (customValue) {
+    document.getElementById('custom-display').textContent = customValue;
+  }
+  
+  // Iterate over all key-values
+  for (const [key, value] of Object.entries(data.keyValues)) {
+    console.log(`Key: ${key}, Value: ${value}`);
+  }
+}
+```
+
+Key-value pairs can be set or removed using the web interface at `/key-values` or via the POST endpoint. These values persist in memory for the lifetime of the WebLynx process and are available to all views.
 
 See the [API Reference](api-reference.md) for complete data structure details.
 
