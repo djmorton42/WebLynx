@@ -9,11 +9,13 @@ public class ViewDiscoveryService
     private readonly string _viewsPath;
     private readonly List<ViewMetadata> _discoveredViews = new();
     private readonly IConfiguration _configuration;
+    private readonly KeyValueStoreService? _keyValueStore;
 
-    public ViewDiscoveryService(ILogger<ViewDiscoveryService> logger, IConfiguration configuration)
+    public ViewDiscoveryService(ILogger<ViewDiscoveryService> logger, IConfiguration configuration, KeyValueStoreService? keyValueStore = null)
     {
         _logger = logger;
         _configuration = configuration;
+        _keyValueStore = keyValueStore;
         _viewsPath = Path.Combine(Directory.GetCurrentDirectory(), "Views");
     }
 
@@ -33,6 +35,8 @@ public class ViewDiscoveryService
             .Where(dir => !Path.GetFileName(dir).StartsWith("."))
             .OrderBy(dir => Path.GetFileName(dir));
 
+        var keyValueHistory = new Dictionary<string, (string firstView, string firstValue)>();
+        
         foreach (var viewDirectory in viewDirectories)
         {
             var viewName = Path.GetFileName(viewDirectory);
@@ -42,6 +46,9 @@ public class ViewDiscoveryService
             if (viewMetadata.IsValid)
             {
                 _logger.LogInformation("Discovered valid view: {ViewName} (http://localhost:{Port}/views/{ViewName})", viewName, GetHttpPort(), viewName);
+                
+                // Load view.properties if it exists
+                LoadViewProperties(viewDirectory, viewName, keyValueHistory);
             }
             else
             {
@@ -146,5 +153,75 @@ public class ViewDiscoveryService
     private int GetHttpPort()
     {
         return _configuration.GetValue<int>("HttpSettings:Port");
+    }
+
+    private void LoadViewProperties(string viewDirectory, string viewName, Dictionary<string, (string firstView, string firstValue)> keyValueHistory)
+    {
+        if (_keyValueStore == null)
+        {
+            return;
+        }
+
+        var propertiesFilePath = Path.Combine(viewDirectory, "view.properties");
+        if (!File.Exists(propertiesFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            var lines = File.ReadAllLines(propertiesFilePath);
+            foreach (var line in lines)
+            {
+                // Skip empty lines and comments (lines starting with #)
+                var trimmedLine = line.Trim();
+                if (string.IsNullOrEmpty(trimmedLine) || trimmedLine.StartsWith("#"))
+                {
+                    continue;
+                }
+
+                // Parse key=value format
+                var equalIndex = trimmedLine.IndexOf('=');
+                if (equalIndex <= 0 || equalIndex >= trimmedLine.Length - 1)
+                {
+                    _logger.LogWarning("Invalid line format in view.properties for view {ViewName}: {Line}", viewName, trimmedLine);
+                    continue;
+                }
+
+                var key = trimmedLine.Substring(0, equalIndex).Trim();
+                var value = trimmedLine.Substring(equalIndex + 1).Trim();
+
+                if (string.IsNullOrEmpty(key))
+                {
+                    _logger.LogWarning("Empty key in view.properties for view {ViewName}: {Line}", viewName, trimmedLine);
+                    continue;
+                }
+
+                // Check for conflicts (if key was set by a different view with a different value)
+                if (keyValueHistory.TryGetValue(key, out var history))
+                {
+                    if (history.firstValue != value)
+                    {
+                        _logger.LogWarning("Key-value conflict for key '{Key}': view '{FirstView}' set '{FirstValue}', view '{CurrentView}' set '{CurrentValue}' (using '{CurrentValue}' - last one wins)", 
+                            key, history.firstView, history.firstValue, viewName, value, value);
+                    }
+                }
+                else
+                {
+                    // First time this key is being set
+                    keyValueHistory[key] = (viewName, value);
+                }
+
+                // Set the value (last one wins)
+                _keyValueStore.SetValue(key, value);
+                _logger.LogDebug("Loaded key-value from view {ViewName}: {Key} = {Value}", viewName, key, value);
+            }
+
+            _logger.LogInformation("Loaded view.properties for view: {ViewName}", viewName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load view.properties for view {ViewName}", viewName);
+        }
     }
 }

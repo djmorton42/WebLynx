@@ -62,8 +62,8 @@ builder.Services.AddSingleton<MessageParser>();
 builder.Services.AddSingleton<RaceStateManager>();
 builder.Services.AddSingleton<MultiPortTcpService>();
 builder.Services.AddSingleton<TemplateService>();
-builder.Services.AddSingleton<ViewDiscoveryService>();
 builder.Services.AddSingleton<KeyValueStoreService>();
+builder.Services.AddSingleton<ViewDiscoveryService>();
 builder.Services.AddHostedService<LiveRaceFileWriter>();
 
 // Add API services

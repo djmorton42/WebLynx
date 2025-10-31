@@ -24,11 +24,17 @@ public class KeyValueController : Controller
             var allValues = _keyValueStore.GetAllValues();
             
             var valuesListHtml = string.Join("\n", allValues.OrderBy(kvp => kvp.Key).Select(kvp =>
-                $@"            <tr>
-                <td><strong>{System.Net.WebUtility.HtmlEncode(kvp.Key)}</strong></td>
-                <td>{System.Net.WebUtility.HtmlEncode(kvp.Value)}</td>
-            </tr>"
-            ));
+            {
+                var encodedKey = System.Net.WebUtility.HtmlEncode(kvp.Key);
+                var encodedValue = System.Net.WebUtility.HtmlEncode(kvp.Value);
+                // Use raw values with proper HTML attribute encoding (HTML-encode is sufficient for attributes)
+                var attrKey = encodedKey.Replace("\"", "&quot;").Replace("'", "&#39;");
+                var attrValue = encodedValue.Replace("\"", "&quot;").Replace("'", "&#39;");
+                return $@"            <tr class=""key-value-row"" data-key=""{attrKey}"" data-value=""{attrValue}"">
+                <td><strong>{encodedKey}</strong></td>
+                <td>{encodedValue}</td>
+            </tr>";
+            }));
 
             var html = $@"
 <!DOCTYPE html>
@@ -118,6 +124,16 @@ public class KeyValueController : Controller
         tr:nth-child(even) td {{
             background-color: #f9f9f9;
         }}
+        .key-value-row {{
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }}
+        .key-value-row:hover {{
+            background-color: #e3f2fd !important;
+        }}
+        .key-value-row:hover td {{
+            background-color: #e3f2fd !important;
+        }}
         .no-values {{
             text-align: center;
             color: #666;
@@ -153,6 +169,7 @@ public class KeyValueController : Controller
 
         <div class=""values-section"">
             <h2>Current Stored Values</h2>
+            <div class=""info-text"" style=""margin-bottom: 10px;"">Click on a row to edit it</div>
             {(allValues.Any() 
                 ? $@"<table>
                 <thead>
@@ -168,6 +185,32 @@ public class KeyValueController : Controller
                 : @"<div class=""no-values"">No values stored yet. Use the form above to add key-value pairs.</div>")}
         </div>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {{
+            const rows = document.querySelectorAll('.key-value-row');
+            const keyInput = document.getElementById('key');
+            const valueInput = document.getElementById('value');
+            
+            rows.forEach(row => {{
+                row.addEventListener('click', function() {{
+                    // Get attribute values directly (they're already HTML-decoded by the browser)
+                    const key = this.getAttribute('data-key');
+                    const value = this.getAttribute('data-value');
+                    
+                    if (key !== null && value !== null) {{
+                        keyInput.value = key;
+                        valueInput.value = value;
+                        
+                        // Scroll to form and focus on value input
+                        document.querySelector('.form-section').scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+                        valueInput.focus();
+                        valueInput.select();
+                    }}
+                }});
+            }});
+        }});
+    </script>
 </body>
 </html>";
 
